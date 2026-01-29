@@ -26,26 +26,10 @@ const fastify = Fastify({
 if (IS_PRODUCTION) {
   const clientDisplayPath = join(__dirname, '../../client-display/dist');
   const clientControllerPath = join(__dirname, '../../client-controller/dist');
-  const publicPath = join(__dirname, '../public');
 
-  // Register static file serving for display (first registration, gets decorators)
-  fastify.register(FastifyStatic, {
-    root: clientDisplayPath,
-    prefix: '/display/',
-    index: ['index.html'],
-  });
-
-  // Register static file serving for controller
-  fastify.register(FastifyStatic, {
-    root: clientControllerPath,
-    prefix: '/controller/',
-    decorateReply: false,
-    index: ['index.html'],
-  });
-
-  // Serve landing page at root (registered after plugins)
+  // Redirect root to display
   fastify.get('/', async (request, reply) => {
-    return reply.sendFile('index.html', publicPath);
+    return reply.redirect('/display/');
   });
 
   // Redirect URLs without trailing slash
@@ -55,6 +39,19 @@ if (IS_PRODUCTION) {
   
   fastify.get('/controller', async (request, reply) => {
     return reply.redirect('/controller/');
+  });
+
+  // Register static file serving for display
+  fastify.register(FastifyStatic, {
+    root: clientDisplayPath,
+    prefix: '/display/',
+  });
+
+  // Register static file serving for controller
+  fastify.register(FastifyStatic, {
+    root: clientControllerPath,
+    prefix: '/controller/',
+    decorateReply: false,
   });
 }
 

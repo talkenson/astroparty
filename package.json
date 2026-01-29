@@ -8,15 +8,21 @@
   "description": "Multiplayer browser-based space combat game",
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=@astroparty/server\" \"npm run dev --workspace=@astroparty/client-display\" \"npm run dev --workspace=@astroparty/client-controller\"",
-    "build:shared": "npm run build --workspace=@astroparty/shared",
     "build": "npm run build:shared && npm run build --workspaces --if-present",
-    "start": "npm run start --workspace=@astroparty/server",
+    "build:shared": "npm run build --workspace=@astroparty/shared",
+    "start": "cross-env NODE_ENV=production node packages/server/dist/server.js",
     "clean": "npm run clean --workspaces --if-present"
   },
-  "keywords": ["game", "multiplayer", "websocket", "asteroids"],
+  "keywords": [
+    "game",
+    "multiplayer",
+    "websocket",
+    "asteroids"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0"
   }
 }
