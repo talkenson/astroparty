@@ -27,15 +27,26 @@ if (IS_PRODUCTION) {
   const clientDisplayPath = join(__dirname, '../../client-display/dist');
   const clientControllerPath = join(__dirname, '../../client-controller/dist');
 
+  // Redirect URLs without trailing slash
+  fastify.get('/display', async (request, reply) => {
+    return reply.redirect('/display/');
+  });
+  
+  fastify.get('/controller', async (request, reply) => {
+    return reply.redirect('/controller/');
+  });
+
   fastify.register(FastifyStatic, {
     root: clientDisplayPath,
     prefix: '/display/',
+    index: ['index.html'],
   });
 
   fastify.register(FastifyStatic, {
     root: clientControllerPath,
     prefix: '/controller/',
     decorateReply: false,
+    index: ['index.html'],
   });
 
   // Redirect root to display in production
