@@ -29,9 +29,8 @@ if (IS_PRODUCTION) {
   const publicPath = join(__dirname, '../public');
 
   // Serve landing page at root
-  fastify.register(FastifyStatic, {
-    root: publicPath,
-    prefix: '/',
+  fastify.get('/', async (request, reply) => {
+    return reply.sendFile('index.html', publicPath);
   });
 
   // Redirect URLs without trailing slash
@@ -43,13 +42,14 @@ if (IS_PRODUCTION) {
     return reply.redirect('/controller/');
   });
 
+  // Register static file serving for display
   fastify.register(FastifyStatic, {
     root: clientDisplayPath,
     prefix: '/display/',
-    decorateReply: false,
     index: ['index.html'],
   });
 
+  // Register static file serving for controller
   fastify.register(FastifyStatic, {
     root: clientControllerPath,
     prefix: '/controller/',
