@@ -86,6 +86,16 @@ io.on('connection', (socket) => {
     gameManager.handleInput(event);
   });
 
+  socket.on('startGame', () => {
+    fastify.log.info(`Player ${socket.id} requesting game start`);
+    gameManager.startGame(socket.id);
+  });
+
+  socket.on('playAgain', () => {
+    fastify.log.info(`Player ${socket.id} requesting play again`);
+    gameManager.resetGame();
+  });
+
   socket.on('disconnect', () => {
     fastify.log.info(`Client disconnected: ${socket.id}`);
     gameManager.removePlayer(socket.id);

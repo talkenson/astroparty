@@ -13,7 +13,23 @@ export class Controller {
   start(playerId: string): void {
     this.playerId = playerId;
     this.setupControls();
+    this.setupPhaseButtons();
     this.listenForGameState();
+  }
+
+  private setupPhaseButtons(): void {
+    const startButton = document.getElementById('start-game-button')!;
+    const playAgainButton = document.getElementById('play-again-button')!;
+
+    startButton.addEventListener('click', () => {
+      this.socketClient.emit('startGame');
+      this.vibrate(30);
+    });
+
+    playAgainButton.addEventListener('click', () => {
+      this.socketClient.emit('playAgain');
+      this.vibrate(30);
+    });
   }
 
   private setupControls(): void {
@@ -70,7 +86,43 @@ export class Controller {
         this.updateAmmoDisplay(player.ammo);
         this.updatePlayerColor(player.color);
       }
+      
+      // Update game phase UI
+      this.updateGamePhase(state.phase, state.hostPlayerId);
     });
+  }
+
+  private updateGamePhase(phase: string, hostPlayerId: string | null): void {
+    const controls = document.getElementById('controls')!;
+    const startButton = document.getElementById('start-game-button')!;
+    const playAgainButton = document.getElementById('play-again-button')!;
+
+    console.log(`[Controller] Phase: ${phase}, Host: ${hostPlayerId}, Me: ${this.playerId}`);
+
+    if (phase === 'WAITING') {
+      // Show start button only to host
+      if (hostPlayerId === this.playerId) {
+        controls.style.display = 'none';
+        startButton.style.display = 'flex';
+        playAgainButton.style.display = 'none';
+        console.log('[Controller] Showing START button (I am host)');
+      } else {
+        controls.style.display = 'none';
+        startButton.style.display = 'none';
+        playAgainButton.style.display = 'none';
+        console.log('[Controller] Waiting for host to start...');
+      }
+    } else if (phase === 'PLAYING') {
+      // Show game controls
+      controls.style.display = 'flex';
+      startButton.style.display = 'none';
+      playAgainButton.style.display = 'none';
+    } else if (phase === 'ENDED') {
+      // Show play again button
+      controls.style.display = 'none';
+      startButton.style.display = 'none';
+      playAgainButton.style.display = 'flex';
+    }
   }
 
   private updateAmmoDisplay(ammo: number): void {

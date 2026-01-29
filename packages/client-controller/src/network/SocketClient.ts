@@ -20,6 +20,13 @@ export class SocketClient {
     this.socket.emit('input', event);
   }
 
+  emit<K extends keyof ClientToServerEvents>(
+    event: K,
+    ...args: Parameters<ClientToServerEvents[K]>
+  ): void {
+    (this.socket.emit as any)(event, ...args);
+  }
+
   on<K extends keyof ServerToClientEvents>(
     event: K,
     listener: ServerToClientEvents[K]

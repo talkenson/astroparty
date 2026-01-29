@@ -37,6 +37,8 @@ export class GameManager {
       bullets: [],
       roundEndTime: null,
       isRoundActive: false,
+      phase: 'WAITING',
+      hostPlayerId: null,
     };
 
     this.physicsEngine = new PhysicsEngine(this.gameState);
@@ -85,13 +87,18 @@ export class GameManager {
     this.gameState.players.set(playerId, player);
     this.playerNames.set(playerId, playerName);
 
+    // Set first player as host
+    if (this.gameState.hostPlayerId === null) {
+      this.gameState.hostPlayerId = playerId;
+      console.log(`First player joined. Host set to: ${playerId}`);
+    } else {
+      console.log(`Player joined. Current host: ${this.gameState.hostPlayerId}, new player: ${playerId}`);
+    }
+
     // Notify all clients
     this.io.emit('playerJoined', playerId, playerName);
 
-    // Start round if not active and we have at least 1 player
-    if (!this.gameState.isRoundActive && this.gameState.players.size >= 1) {
-      this.startRound();
-    }
+    // Don't auto-start anymore - wait for host to click start
   }
 
   removePlayer(playerId: string): void {
@@ -111,6 +118,43 @@ export class GameManager {
 
   handleInput(event: InputEvent): void {
     this.inputHandler.handleInput(event);
+  }
+
+  // Manual game start (called by host)
+  startGame(playerId: string): void {
+    console.log(`startGame called by ${playerId}, host is ${this.gameState.hostPlayerId}, phase is ${this.gameState.phase}`);
+    
+    if (this.gameState.phase !== 'WAITING') {
+      console.warn(`Cannot start game: phase is ${this.gameState.phase}`);
+      return;
+    }
+
+    if (this.gameState.hostPlayerId !== playerId) {
+      console.warn(`Only host can start the game: ${playerId} is not host`);
+      return;
+    }
+
+    if (this.gameState.players.size < 1) {
+      console.warn('Cannot start game: need at least 1 player');
+      return;
+    }
+
+    this.startRound();
+  }
+
+  // Reset game after round ends (called by any player)
+  resetGame(): void {
+    if (this.gameState.phase !== 'ENDED') {
+      console.warn(`Cannot reset game: phase is ${this.gameState.phase}`);
+      return;
+    }
+
+    // Reset scores
+    for (const player of this.gameState.players.values()) {
+      player.score = 0;
+    }
+
+    this.startRound();
   }
 
   private update(): void {
@@ -149,6 +193,7 @@ export class GameManager {
 
   private startRound(): void {
     this.gameState.isRoundActive = true;
+    this.gameState.phase = 'PLAYING';
     this.gameState.roundEndTime = Date.now() + this.roundDuration;
 
     // Reset all players
@@ -168,6 +213,7 @@ export class GameManager {
 
   private endRound(): void {
     this.gameState.isRoundActive = false;
+    this.gameState.phase = 'ENDED';
     this.gameState.roundEndTime = null;
 
     // Find winner (highest score)
@@ -184,12 +230,7 @@ export class GameManager {
 
     this.io.emit('roundEnd', winner);
 
-    // Start new round after delay if we still have players
-    setTimeout(() => {
-      if (this.gameState.players.size > 0) {
-        this.startRound();
-      }
-    }, 10000); // ROUND_END_DELAY
+    // Don't auto-restart - wait for playAgain
   }
 
   private getRandomSpawnPosition(): { x: number; y: number } {
@@ -215,6 +256,8 @@ export class GameManager {
       bullets: this.gameState.bullets,
       roundEndTime: this.gameState.roundEndTime,
       isRoundActive: this.gameState.isRoundActive,
+      phase: this.gameState.phase,
+      hostPlayerId: this.gameState.hostPlayerId,
     };
 
     this.io.emit('gameState', serialized);

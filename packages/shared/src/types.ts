@@ -30,11 +30,15 @@ export interface Bullet {
   spawnTime: number;
 }
 
+export type GamePhase = 'WAITING' | 'PLAYING' | 'ENDED';
+
 export interface GameState {
   players: Map<string, Player>;
   bullets: Bullet[];
   roundEndTime: number | null; // timestamp when round ends
   isRoundActive: boolean;
+  phase: GamePhase; // Current game phase
+  hostPlayerId: string | null; // First player who can start the game
 }
 
 // ========================================
@@ -57,6 +61,8 @@ export interface InputEvent {
 export interface ClientToServerEvents {
   joinGame: (playerName: string, callback: (playerId: string) => void) => void;
   input: (event: InputEvent) => void;
+  startGame: () => void; // Host starts the game
+  playAgain: () => void; // Any player requests new round
   disconnect: () => void;
 }
 
@@ -85,4 +91,6 @@ export interface SerializedGameState {
   bullets: Bullet[];
   roundEndTime: number | null;
   isRoundActive: boolean;
+  phase: GamePhase;
+  hostPlayerId: string | null;
 }
