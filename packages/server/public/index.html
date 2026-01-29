@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AstroParty - Choose Your Role</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 1.5rem;
+      color: #a0aec0;
+      margin-bottom: 3rem;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .role-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+      border-radius: 20px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .role-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      transition: all 0.3s ease;
+      z-index: 0;
+    }
+
+    .role-button:hover::before {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+    }
+
+    .role-button:hover {
+      transform: translateY(-5px);
+      border-color: #667eea;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .role-button > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .icon {
+      font-size: 5rem;
+      margin-bottom: 1rem;
+    }
+
+    .role-title {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      color: #ffffff;
+    }
+
+    .role-description {
+      font-size: 1rem;
+      color: #a0aec0;
+    }
+
+    .display-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .controller-button {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .footer {
+      margin-top: 3rem;
+      font-size: 0.9rem;
+      color: #718096;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+
+      .buttons {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .role-button {
+        padding: 2rem 1.5rem;
+      }
+
+      .icon {
+        font-size: 3rem;
+      }
+
+      .role-title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 AstroParty</h1>
+    <p class="subtitle">Multiplayer Space Combat Game</p>
+
+    <div class="buttons">
+      <a href="/display/" class="role-button display-button">
+        <div class="icon">📺</div>
+        <div class="role-title">Display</div>
+        <div class="role-description">Main game screen for everyone to watch</div>
+      </a>
+
+      <a href="/controller/" class="role-button controller-button">
+        <div class="icon">🎮</div>
+        <div class="role-title">Controller</div>
+        <div class="role-description">Play on your phone or device</div>
+      </a>
+    </div>
+
+    <div class="footer">
+      <p>Display on TV/Monitor • Controller on Phone/Tablet</p>
+    </div>
+  </div>
+</body>
+</html>
