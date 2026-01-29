@@ -68,6 +68,7 @@ export class Controller {
       const player = state.players.find(p => p.id === this.playerId);
       if (player) {
         this.updateAmmoDisplay(player.ammo);
+        this.updatePlayerColor(player.color);
       }
     });
   }
@@ -87,6 +88,20 @@ export class Controller {
         }
       }
     });
+  }
+
+  private updatePlayerColor(color: string): void {
+    // Update player color indicator
+    const colorIndicator = document.getElementById('player-color');
+    if (colorIndicator) {
+      colorIndicator.style.backgroundColor = color;
+    }
+
+    // Subtle background gradient with player color
+    document.body.style.background = `linear-gradient(135deg, 
+      rgba(10, 10, 21, 1) 0%, 
+      ${color}22 100%
+    )`;
   }
 
   private vibrate(duration: number): void {
