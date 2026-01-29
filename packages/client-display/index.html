@@ -93,6 +93,99 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
     }
+
+    /* Leaderboard Overlay */
+    #leaderboard-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .leaderboard-container {
+      text-align: center;
+      padding: 40px;
+      max-width: 600px;
+      width: 90%;
+    }
+
+    .game-over-title {
+      font-size: 64px;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+      margin-bottom: 30px;
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+      50% { text-shadow: 0 0 30px rgba(255, 215, 0, 1); }
+    }
+
+    .leaderboard-entry {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 15px 0;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border: 2px solid transparent;
+    }
+
+    .leaderboard-entry.first {
+      border-color: #FFD700;
+      background: rgba(255, 215, 0, 0.2);
+    }
+
+    .leaderboard-entry.second {
+      border-color: #C0C0C0;
+    }
+
+    .leaderboard-entry.third {
+      border-color: #CD7F32;
+    }
+
+    .rank {
+      font-size: 32px;
+      font-weight: bold;
+      min-width: 50px;
+    }
+
+    .player-info {
+      flex: 1;
+      text-align: left;
+    }
+
+    .player-info .name {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .player-info .score {
+      font-size: 20px;
+      color: #aaa;
+    }
+
+    .waiting-message {
+      margin-top: 30px;
+      font-size: 18px;
+      color: #888;
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
   </style>
 </head>
 <body>
@@ -107,6 +200,15 @@
   <div id="connection-status">
     <div class="status-dot"></div>
     <span>Connected</span>
+  </div>
+
+  <!-- Leaderboard Overlay (shown when phase is ENDED) -->
+  <div id="leaderboard-overlay" style="display: none;">
+    <div class="leaderboard-container">
+      <h1 class="game-over-title">🏆 GAME OVER</h1>
+      <div id="leaderboard-content"></div>
+      <p class="waiting-message">Waiting for next round...</p>
+    </div>
   </div>
   
   <script type="module" src="/src/main.ts"></script>

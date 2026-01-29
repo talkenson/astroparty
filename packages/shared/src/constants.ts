@@ -65,10 +65,10 @@ function hslToRgb(h: number, s: number, l: number): string {
 }
 
 // Generate 15 colors evenly distributed around the color wheel
-// Each color is 24 degrees (360 / 15) from the previous one
+// Using larger steps for better distinction between adjacent colors
 export const PLAYER_COLORS: string[] = [];
 for (let i = 0; i < 15; i++) {
-  const hue = (i * 24) % 360; // 24 degrees between colors
+  const hue = (10 + i * 34) % 360; // Start at 10°, 34 degrees between colors for better separation
   const saturation = 100; // Full saturation for bright colors
   const lightness = 50; // Medium brightness for good visibility
   PLAYER_COLORS.push(hslToRgb(hue, saturation, lightness));

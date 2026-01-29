@@ -114,7 +114,17 @@ export class CanvasRenderer {
   }
 
   private updateUI(state: SerializedGameState): void {
-    // Update scoreboard
+    // Show/hide leaderboard based on game phase
+    const leaderboardOverlay = document.getElementById('leaderboard-overlay')!;
+    
+    if (state.phase === 'ENDED') {
+      leaderboardOverlay.style.display = 'flex';
+      this.updateLeaderboard(state);
+    } else {
+      leaderboardOverlay.style.display = 'none';
+    }
+
+    // Update scoreboard (always visible during PLAYING)
     const scoreboard = document.getElementById('scoreboard')!;
     scoreboard.innerHTML = state.players
       .sort((a, b) => b.score - a.score)
@@ -135,5 +145,30 @@ export class CanvasRenderer {
     } else {
       timer.textContent = '--:--';
     }
+  }
+
+  private updateLeaderboard(state: SerializedGameState): void {
+    const leaderboardContent = document.getElementById('leaderboard-content')!;
+    const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+
+    const medals = ['🥇', '🥈', '🥉'];
+    const classes = ['first', 'second', 'third'];
+
+    leaderboardContent.innerHTML = sortedPlayers
+      .map((player, index) => {
+        const rankClass = index < 3 ? classes[index] : '';
+        const medal = index < 3 ? medals[index] : `${index + 1}.`;
+        
+        return `
+          <div class="leaderboard-entry ${rankClass}">
+            <div class="rank">${medal}</div>
+            <div class="player-info">
+              <div class="name" style="color: ${player.color}">${player.name}</div>
+              <div class="score">${player.score} points</div>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
   }
 }
