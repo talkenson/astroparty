@@ -46,6 +46,7 @@ if (IS_PRODUCTION) {
   fastify.register(FastifyStatic, {
     root: clientDisplayPath,
     prefix: '/display/',
+    decorateReply: false,
     index: ['index.html'],
   });
 
