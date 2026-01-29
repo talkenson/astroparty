@@ -26,11 +26,7 @@ const fastify = Fastify({
 if (IS_PRODUCTION) {
   const clientDisplayPath = join(__dirname, '../../client-display/dist');
   const clientControllerPath = join(__dirname, '../../client-controller/dist');
-
-  // Redirect root to display
-  fastify.get('/', async (request, reply) => {
-    return reply.redirect('/display/');
-  });
+  const publicPath = join(__dirname, '../public');
 
   // Redirect URLs without trailing slash
   fastify.get('/display', async (request, reply) => {
@@ -52,6 +48,11 @@ if (IS_PRODUCTION) {
     root: clientControllerPath,
     prefix: '/controller/',
     decorateReply: false,
+  });
+
+  // Serve landing page at root (after plugins so sendFile is available)
+  fastify.get('/', async (request, reply) => {
+    return reply.sendFile('index.html', publicPath);
   });
 }
 
