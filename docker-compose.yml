@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  astroparty:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - ROUND_DURATION=150000
+      - NODE_ENV=production
+    restart: unless-stopped
+    container_name: astroparty-game

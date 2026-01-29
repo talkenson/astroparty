@@ -1,0 +1,20 @@
+{
+  "name": "@astroparty/client-controller",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5174",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@astroparty/shared": "file:../shared",
+    "socket.io-client": "^4.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10",
+    "rimraf": "^5.0.5"
+  }
+}
