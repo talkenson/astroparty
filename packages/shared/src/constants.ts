@@ -13,7 +13,7 @@ export const BULLET_SPEED = 8;
 export const AMMO_CLIP_SIZE = 3; // Clip size (number of charges)
 export const AMMO_RELOAD_TIME = 2000; // Reload time for one charge in milliseconds
 export const TURN_SPEED = 0.03; // Base turn speed
-export const TURN_SPEED_MAX = 0.15; // Maximum turn speed
+export const TURN_SPEED_MAX = 0.12; // Maximum turn speed
 export const TURN_ACCELERATION_TIME = 3000; // Time in ms to reach maximum turn speed
 
 // Ship dimensions
