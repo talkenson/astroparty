@@ -10,5 +10,6 @@ nameInput.onJoin((playerName, playerId) => {
   document.getElementById('controller-screen')!.classList.add('active');
   document.getElementById('player-name')!.textContent = playerName;
   
-  controller.start(playerId);
+  // Pass the same socket client to avoid duplicate connections
+  controller.start(playerId, nameInput.getSocketClient());
 });

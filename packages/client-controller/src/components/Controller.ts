@@ -3,15 +3,12 @@ import { SocketClient } from '../network/SocketClient';
 
 export class Controller {
   private playerId: string = '';
-  private socketClient: SocketClient;
+  private socketClient!: SocketClient;
 
-  constructor() {
-    const serverUrl = import.meta.env.DEV ? 'http://localhost:3000' : window.location.origin;
-    this.socketClient = new SocketClient(serverUrl);
-  }
-
-  start(playerId: string): void {
+  // Controller should receive the socket client, not create a new one
+  start(playerId: string, socketClient: SocketClient): void {
     this.playerId = playerId;
+    this.socketClient = socketClient;
     this.setupControls();
     this.setupPhaseButtons();
     this.listenForGameState();
