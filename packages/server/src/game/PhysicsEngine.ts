@@ -1,4 +1,4 @@
-import type { GameState, Player, Bullet } from '@astroparty/shared';
+import type { GameState, Player, Bullet, Block } from '@astroparty/shared';
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -16,6 +16,7 @@ import {
   PowerUpType,
   SPEED_BOOST_MULTIPLIER,
   SPEED_BOOST_ACCELERATION_MULTIPLIER,
+  BLOCK_SIZE,
 } from '@astroparty/shared';
 
 export class PhysicsEngine {
@@ -30,6 +31,14 @@ export class PhysicsEngine {
     this.updateBullets();
     this.checkCollisions();
     this.removeDeadBullets();
+  }
+
+  /**
+   * Public method to check if a position would be inside a wall
+   * Used by GameManager for spawn position validation
+   */
+  isPositionInsideWall(x: number, y: number, radius: number): boolean {
+    return this.collidesWithWalls(x, y, radius);
   }
 
   private updateShips(): void {
@@ -77,9 +86,29 @@ export class PhysicsEngine {
       player.velocity.x *= FRICTION;
       player.velocity.y *= FRICTION;
 
-      // Update position
-      player.position.x += player.velocity.x;
-      player.position.y += player.velocity.y;
+      // Calculate new position
+      const newX = player.position.x + player.velocity.x;
+      const newY = player.position.y + player.velocity.y;
+      
+      // Check wall collision (Ghost Mode doesn't bypass walls)
+      const collisionNormal = this.getWallCollisionNormal(newX, newY, SHIP_MAX_RADIUS);
+      if (collisionNormal) {
+        // Reflect velocity vector off the wall normal
+        // Formula: v' = v - 2(v·n)n
+        const dotProduct = player.velocity.x * collisionNormal.x + player.velocity.y * collisionNormal.y;
+        player.velocity.x = player.velocity.x - 2 * dotProduct * collisionNormal.x;
+        player.velocity.y = player.velocity.y - 2 * dotProduct * collisionNormal.y;
+        
+        // Apply bounce damping (keep 70% of velocity)
+        player.velocity.x *= 0.7;
+        player.velocity.y *= 0.7;
+        
+        // Don't update position - stay at current position
+      } else {
+        // Update position if no collision
+        player.position.x = newX;
+        player.position.y = newY;
+      }
 
       // Screen wrapping
       if (player.position.x < 0) player.position.x += GAME_WIDTH;
@@ -90,10 +119,18 @@ export class PhysicsEngine {
   }
 
   private updateBullets(): void {
-    for (const bullet of this.gameState.bullets) {
+    // Update bullet positions and check wall collisions
+    this.gameState.bullets = this.gameState.bullets.filter(bullet => {
       bullet.position.x += bullet.velocity.x;
       bullet.position.y += bullet.velocity.y;
-    }
+      
+      // Remove bullet if it hits a wall
+      if (this.collidesWithWalls(bullet.position.x, bullet.position.y, BULLET_RADIUS)) {
+        return false; // Remove bullet
+      }
+      
+      return true; // Keep bullet
+    });
   }
 
   private checkCollisions(): void {
@@ -242,5 +279,76 @@ export class PhysicsEngine {
       x: Math.random() * GAME_WIDTH,
       y: Math.random() * GAME_HEIGHT,
     };
+  }
+
+  // ========================================
+  // Wall Collision Helpers
+  // ========================================
+
+  /**
+   * Check if a circle collides with any wall block
+   */
+  private collidesWithWalls(x: number, y: number, radius: number): boolean {
+    for (const block of this.gameState.blocks) {
+      if (this.circleRectCollision(x, y, radius, block)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Circle-Rectangle collision detection
+   */
+  private circleRectCollision(cx: number, cy: number, radius: number, block: Block): boolean {
+    const rectX = block.gridX * BLOCK_SIZE;
+    const rectY = block.gridY * BLOCK_SIZE;
+    const rectWidth = BLOCK_SIZE;
+    const rectHeight = BLOCK_SIZE;
+
+    // Find the closest point on the rectangle to the circle
+    const closestX = Math.max(rectX, Math.min(cx, rectX + rectWidth));
+    const closestY = Math.max(rectY, Math.min(cy, rectY + rectHeight));
+
+    // Calculate distance from closest point to circle center
+    const distanceX = cx - closestX;
+    const distanceY = cy - closestY;
+    const distanceSquared = distanceX * distanceX + distanceY * distanceY;
+
+    return distanceSquared < radius * radius;
+  }
+
+  /**
+   * Get the collision normal for proper reflection physics
+   * Returns null if no collision, or a normalized vector pointing away from the wall
+   */
+  private getWallCollisionNormal(cx: number, cy: number, radius: number): { x: number; y: number } | null {
+    for (const block of this.gameState.blocks) {
+      if (this.circleRectCollision(cx, cy, radius, block)) {
+        // Found collision, calculate normal
+        const rectX = block.gridX * BLOCK_SIZE;
+        const rectY = block.gridY * BLOCK_SIZE;
+        const rectWidth = BLOCK_SIZE;
+        const rectHeight = BLOCK_SIZE;
+
+        // Find the closest point on the rectangle to the circle
+        const closestX = Math.max(rectX, Math.min(cx, rectX + rectWidth));
+        const closestY = Math.max(rectY, Math.min(cy, rectY + rectHeight));
+
+        // Calculate normal direction (from closest point to circle center)
+        const normalX = cx - closestX;
+        const normalY = cy - closestY;
+
+        // Normalize the vector
+        const length = Math.sqrt(normalX * normalX + normalY * normalY);
+        if (length > 0) {
+          return {
+            x: normalX / length,
+            y: normalY / length,
+          };
+        }
+      }
+    }
+    return null; // No collision
   }
 }

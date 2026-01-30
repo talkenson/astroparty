@@ -1,7 +1,18 @@
-// Game configuration constants (from reference repository)
+// ========================================
+// Game Constants
+// ========================================
+
 export const MAX_PLAYERS = 15;
 export const GAME_WIDTH = 1920;
 export const GAME_HEIGHT = 1080;
+
+// ========================================
+// Map/Grid Constants
+// ========================================
+
+export const BLOCK_SIZE = 60; // 60x60 pixels per block
+export const GRID_WIDTH = 32; // 32 blocks wide (1920 / 60)
+export const GRID_HEIGHT = 18; // 18 blocks tall (1080 / 60)
 
 // Physics constants
 export const ACCELERATION = 0.15; // Ship acceleration

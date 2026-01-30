@@ -24,12 +24,16 @@ import {
   AMMO_BOOST_RELOAD_MULTIPLIER,
 } from '@astroparty/shared';
 
+import type { PhysicsEngine } from './PhysicsEngine.js';
+
 export class PowerUpManager {
   private gameState: GameState;
+  private physicsEngine: PhysicsEngine;
   private lastSpawnTime: number = 0;
 
-  constructor(gameState: GameState) {
+  constructor(gameState: GameState, physicsEngine: PhysicsEngine) {
     this.gameState = gameState;
+    this.physicsEngine = physicsEngine;
   }
 
   update(): void {
@@ -389,9 +393,23 @@ export class PowerUpManager {
   }
 
   private getRandomPosition(): { x: number; y: number } {
+    // Try to find a valid spawn position that doesn't collide with walls
+    const maxAttempts = 50;
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const x = Math.random() * GAME_WIDTH;
+      const y = Math.random() * GAME_HEIGHT;
+      
+      // Check if this position is clear of walls (use smaller radius for power-ups)
+      if (!this.physicsEngine.isPositionInsideWall(x, y, POWERUP_RADIUS)) {
+        return { x, y };
+      }
+    }
+    
+    // Fallback: return center if we couldn't find a spot
     return {
-      x: Math.random() * GAME_WIDTH,
-      y: Math.random() * GAME_HEIGHT,
+      x: GAME_WIDTH / 2,
+      y: GAME_HEIGHT / 2,
     };
   }
 }

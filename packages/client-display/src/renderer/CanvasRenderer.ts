@@ -10,6 +10,7 @@ import {
   MINE_RADIUS,
   MEGA_BULLET_SIZE_MULTIPLIER,
   PowerUpType,
+  BLOCK_SIZE,
 } from '@astroparty/shared';
 
 export class CanvasRenderer {
@@ -72,6 +73,11 @@ export class CanvasRenderer {
 
     // Draw starfield background
     this.drawStarfield();
+    
+    // Draw walls
+    for (const block of this.gameState.blocks) {
+      this.drawBlock(block);
+    }
 
     // Draw power-ups
     for (const powerUp of this.gameState.powerUps) {
@@ -117,6 +123,20 @@ export class CanvasRenderer {
       this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
       this.ctx.fill();
     }
+  }
+
+  private drawBlock(block: any): void {
+    const x = block.gridX * BLOCK_SIZE;
+    const y = block.gridY * BLOCK_SIZE;
+    
+    // Draw solid block
+    this.ctx.fillStyle = '#2a2a3e';
+    this.ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+    
+    // Draw border
+    this.ctx.strokeStyle = '#1a1a2e';
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
   }
 
   private drawShip(player: any): void {

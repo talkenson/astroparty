@@ -15,10 +15,12 @@ import {
   MAX_PLAYERS,
   PLAYER_COLORS,
   AMMO_CLIP_SIZE,
+  SHIP_MAX_RADIUS,
 } from '@astroparty/shared';
 import { PhysicsEngine } from './PhysicsEngine.js';
 import { InputHandler } from './InputHandler.js';
 import { PowerUpManager } from './PowerUpManager.js';
+import { MapManager } from './MapManager.js';
 
 export class GameManager {
   private io: SocketIOServer<ClientToServerEvents, ServerToClientEvents>;
@@ -26,6 +28,7 @@ export class GameManager {
   private physicsEngine: PhysicsEngine;
   private inputHandler: InputHandler;
   private powerUpManager: PowerUpManager;
+  private mapManager: MapManager;
   private gameLoopInterval: NodeJS.Timeout | null = null;
   private roundDuration: number;
   private playerNames: Map<string, string> = new Map();
@@ -39,6 +42,7 @@ export class GameManager {
       bullets: [],
       powerUps: [],
       mines: [],
+      blocks: [], // Will be loaded from map
       recentPickups: [],
       roundEndTime: null,
       isRoundActive: false,
@@ -48,7 +52,8 @@ export class GameManager {
 
     this.physicsEngine = new PhysicsEngine(this.gameState);
     this.inputHandler = new InputHandler(this.gameState, this);
-    this.powerUpManager = new PowerUpManager(this.gameState);
+    this.powerUpManager = new PowerUpManager(this.gameState, this.physicsEngine);
+    this.mapManager = new MapManager();
   }
 
   start(): void {
@@ -218,6 +223,11 @@ export class GameManager {
     this.gameState.isRoundActive = true;
     this.gameState.phase = 'PLAYING';
     this.gameState.roundEndTime = Date.now() + this.roundDuration;
+    
+    // Load random map
+    const map = this.mapManager.getRandomMap();
+    this.gameState.blocks = map.blocks;
+    console.log(`[GameManager] Starting round with map: ${map.name}`);
 
     // Reset all players
     for (const player of this.gameState.players.values()) {
@@ -265,9 +275,24 @@ export class GameManager {
   }
 
   private getRandomSpawnPosition(): { x: number; y: number } {
+    // Try to find a valid spawn position that doesn't collide with walls
+    const maxAttempts = 100;
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const x = Math.random() * GAME_WIDTH;
+      const y = Math.random() * GAME_HEIGHT;
+      
+      // Check if this position is clear of walls
+      if (!this.physicsEngine.isPositionInsideWall(x, y, SHIP_MAX_RADIUS)) {
+        return { x, y };
+      }
+    }
+    
+    // Fallback: return center if we couldn't find a spot
+    console.warn('[GameManager] Could not find clear spawn position, using center');
     return {
-      x: Math.random() * GAME_WIDTH,
-      y: Math.random() * GAME_HEIGHT,
+      x: GAME_WIDTH / 2,
+      y: GAME_HEIGHT / 2,
     };
   }
 
@@ -291,6 +316,7 @@ export class GameManager {
       bullets: this.gameState.bullets,
       powerUps: this.gameState.powerUps,
       mines: this.gameState.mines,
+      blocks: this.gameState.blocks,
       recentPickups: this.gameState.recentPickups,
       roundEndTime: this.gameState.roundEndTime,
       isRoundActive: this.gameState.isRoundActive,

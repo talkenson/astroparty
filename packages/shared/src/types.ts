@@ -9,6 +9,20 @@ export interface Vector2D {
   y: number;
 }
 
+// ========================================
+// Map Types
+// ========================================
+
+export interface Block {
+  gridX: number; // X position in grid (0-31)
+  gridY: number; // Y position in grid (0-17)
+}
+
+export interface MapData {
+  name: string;
+  blocks: Block[];
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -46,6 +60,7 @@ export interface GameState {
   bullets: Bullet[];
   powerUps: PowerUp[];
   mines: Mine[];
+  blocks: Block[]; // Current map blocks
   recentPickups: PowerUpPickup[]; // Recent power-up pickups for notifications
   roundEndTime: number | null; // timestamp when round ends
   isRoundActive: boolean;
@@ -119,6 +134,7 @@ export interface SerializedGameState {
   bullets: Bullet[];
   powerUps: PowerUp[];
   mines: Mine[];
+  blocks: Block[];
   recentPickups: PowerUpPickup[];
   roundEndTime: number | null;
   isRoundActive: boolean;
