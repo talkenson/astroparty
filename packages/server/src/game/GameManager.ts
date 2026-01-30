@@ -257,7 +257,7 @@ export class GameManager {
     // Load random map
     const map = this.mapManager.getRandomMap();
     this.gameState.blocks = map.blocks;
-    console.log(`[GameManager] Starting round with map: ${map.name}`);
+    console.log(`[GameManager] Starting round with map: ${map.metadata.name} by ${map.metadata.author} (${map.metadata.width}x${map.metadata.height})`);
     
     // Rebuild spatial grid for optimized collisions
     this.physicsEngine.rebuildSpatialGrid();
