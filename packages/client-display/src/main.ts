@@ -9,8 +9,9 @@ const serverUrl = import.meta.env.DEV ? 'http://localhost:3000' : window.locatio
 const socketClient = new SocketClient(serverUrl);
 
 // Listen for static map data (sent once per round or on connect)
-socketClient.on('mapSync', (blocks) => {
-  renderer.updateMap(blocks);
+// Listen for static map data (sent once per round or on connect)
+socketClient.on('mapSync', (data) => {
+  renderer.updateMap(data.blocks, data.metadata);
 });
 
 // Update renderer when game state changes

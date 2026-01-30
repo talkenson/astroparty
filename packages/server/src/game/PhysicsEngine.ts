@@ -133,10 +133,13 @@ export class PhysicsEngine {
       }
 
       // Screen wrapping
-      if (player.position.x < 0) player.position.x += GAME_WIDTH;
-      if (player.position.x > GAME_WIDTH) player.position.x -= GAME_WIDTH;
-      if (player.position.y < 0) player.position.y += GAME_HEIGHT;
-      if (player.position.y > GAME_HEIGHT) player.position.y -= GAME_HEIGHT;
+      const worldWidth = (this.gameState.mapWidth || GRID_WIDTH) * BLOCK_SIZE;
+      const worldHeight = (this.gameState.mapHeight || GRID_HEIGHT) * BLOCK_SIZE;
+
+      if (player.position.x < 0) player.position.x += worldWidth;
+      if (player.position.x > worldWidth) player.position.x -= worldWidth;
+      if (player.position.y < 0) player.position.y += worldHeight;
+      if (player.position.y > worldHeight) player.position.y -= worldHeight;
     }
   }
 
@@ -292,11 +295,14 @@ export class PhysicsEngine {
       }
 
       // Check if off-screen
+      const worldWidth = (this.gameState.mapWidth || GRID_WIDTH) * BLOCK_SIZE;
+      const worldHeight = (this.gameState.mapHeight || GRID_HEIGHT) * BLOCK_SIZE;
+
       if (
         bullet.position.x < 0 ||
-        bullet.position.x > GAME_WIDTH ||
+        bullet.position.x > worldWidth ||
         bullet.position.y < 0 ||
-        bullet.position.y > GAME_HEIGHT
+        bullet.position.y > worldHeight
       ) {
         return false;
       }
@@ -306,9 +312,12 @@ export class PhysicsEngine {
   }
 
   private getRandomSpawnPosition(): { x: number; y: number } {
+    const worldWidth = (this.gameState.mapWidth || GRID_WIDTH) * BLOCK_SIZE;
+    const worldHeight = (this.gameState.mapHeight || GRID_HEIGHT) * BLOCK_SIZE;
+    
     return {
-      x: Math.random() * GAME_WIDTH,
-      y: Math.random() * GAME_HEIGHT,
+      x: Math.random() * worldWidth,
+      y: Math.random() * worldHeight,
     };
   }
 
@@ -332,11 +341,14 @@ export class PhysicsEngine {
    * Uses spatial grid for O(1) lookup instead of O(n)
    */
   private collidesWithWalls(x: number, y: number, radius: number): boolean {
+    const gridWidth = this.gameState.mapWidth || GRID_WIDTH;
+    const gridHeight = this.gameState.mapHeight || GRID_HEIGHT;
+
     // Calculate which grid cells the circle could overlap
     const minGridX = Math.max(0, Math.floor((x - radius) / BLOCK_SIZE));
-    const maxGridX = Math.min(GRID_WIDTH - 1, Math.floor((x + radius) / BLOCK_SIZE));
+    const maxGridX = Math.min(gridWidth - 1, Math.floor((x + radius) / BLOCK_SIZE));
     const minGridY = Math.max(0, Math.floor((y - radius) / BLOCK_SIZE));
-    const maxGridY = Math.min(GRID_HEIGHT - 1, Math.floor((y + radius) / BLOCK_SIZE));
+    const maxGridY = Math.min(gridHeight - 1, Math.floor((y + radius) / BLOCK_SIZE));
 
     // Check only blocks in the relevant grid cells
     for (let gridY = minGridY; gridY <= maxGridY; gridY++) {

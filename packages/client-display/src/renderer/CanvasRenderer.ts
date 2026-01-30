@@ -10,7 +10,8 @@ import {
   MINE_RADIUS,
   MEGA_BULLET_SIZE_MULTIPLIER,
   PowerUpType,
-  BLOCK_SIZE,
+  GRID_WIDTH,
+  GRID_HEIGHT,
 } from '@astroparty/shared';
 
 export class CanvasRenderer {
@@ -18,6 +19,7 @@ export class CanvasRenderer {
   private ctx: CanvasRenderingContext2D;
   private gameState: SerializedGameState | null = null;
   private blocks: Block[] = []; // Cached map blocks from mapSync
+  private mapMetadata?: { name: string; author: string; width: number; height: number };
   private scale: number = 1;
   private stars: { x: number; y: number; size: number }[] = [];
 
@@ -52,8 +54,24 @@ export class CanvasRenderer {
   /**
    * Update cached map blocks (called via mapSync event)
    */
-  updateMap(blocks: Block[]): void {
+  updateMap(blocks: Block[], metadata?: { name: string; author: string; width: number; height: number }): void {
     this.blocks = blocks;
+    if (metadata) {
+      this.mapMetadata = metadata;
+    }
+  }
+
+  /**
+   * Calculate dynamic block size based on map dimensions
+   */
+  private getBlockSize(): number {
+    const width = this.mapMetadata?.width || GRID_WIDTH;
+    const height = this.mapMetadata?.height || GRID_HEIGHT;
+    
+    return Math.min(
+      Math.floor(GAME_WIDTH / width),
+      Math.floor(GAME_HEIGHT / height)
+    );
   }
 
   start(): void {
@@ -119,9 +137,16 @@ export class CanvasRenderer {
     // text astroparty with large letter intervals
     this.ctx.font = 'bold 200px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.letterSpacing = '12px'; 
+    this.ctx.letterSpacing = '16px'; 
     this.ctx.fillText('Astroparty', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 70);
     this.ctx.letterSpacing = '1px'; 
+
+    // Draw map info if available
+    if (this.mapMetadata) {
+      this.ctx.font = '30px sans-serif';
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+      this.ctx.fillText(`${this.mapMetadata.name} by ${this.mapMetadata.author}`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 150);
+    } 
 
     // Draw some static stars for atmosphere
     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
@@ -134,17 +159,18 @@ export class CanvasRenderer {
   }
 
   private drawBlock(block: any): void {
-    const x = block.gridX * BLOCK_SIZE;
-    const y = block.gridY * BLOCK_SIZE;
+    const blockSize = this.getBlockSize();
+    const x = block.gridX * blockSize;
+    const y = block.gridY * blockSize;
     
     // Draw solid block
-    this.ctx.fillStyle = '#2a2a3e44';
-    this.ctx.fillRect(x+ 1, y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+    this.ctx.fillStyle = '#2a2a3e55';
+    this.ctx.fillRect(x+ 1, y + 1, blockSize - 2, blockSize - 2);
     
     // Draw border
-    this.ctx.strokeStyle = '#1a1a2eaa';
-    this.ctx.lineWidth = 2;
-    this.ctx.strokeRect(x + 1, y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+    this.ctx.strokeStyle = '#1a1a2eff';
+    this.ctx.lineWidth =2;
+    this.ctx.strokeRect(x + 1, y + 1, blockSize - 2, blockSize - 2);
   }
 
   private drawShip(player: any): void {

@@ -8,6 +8,7 @@ import type {
   ServerToClientEvents,
   InputEvent,
   PlayerSpecificState, // Import added
+  MapMetadata,
 } from '@astroparty/shared';
 import {
   GAME_WIDTH,
@@ -38,6 +39,7 @@ export class GameManager {
   private playerNames: Map<string, string> = new Map();
   // Dirty set for network optimization
   private dirtyPlayers: Set<string> = new Set();
+  private currentMapMetadata?: MapMetadata;
 
   constructor(io: SocketIOServer<ClientToServerEvents, ServerToClientEvents>, roundDuration: number) {
     this.io = io;
@@ -49,6 +51,8 @@ export class GameManager {
       powerUps: [],
       mines: [],
       blocks: [], // Will be loaded from map
+      mapWidth: GRID_WIDTH,
+      mapHeight: GRID_HEIGHT,
       recentPickups: [],
       roundEndTime: null,
       isRoundActive: false,
@@ -257,6 +261,9 @@ export class GameManager {
     // Load random map
     const map = this.mapManager.getRandomMap();
     this.gameState.blocks = map.blocks;
+    this.gameState.mapWidth = map.metadata.width;
+    this.gameState.mapHeight = map.metadata.height;
+    this.currentMapMetadata = map.metadata;
     console.log(`[GameManager] Starting round with map: ${map.metadata.name} by ${map.metadata.author} (${map.metadata.width}x${map.metadata.height})`);
     
     // Rebuild spatial grid for optimized collisions
@@ -437,14 +444,20 @@ export class GameManager {
    * Sync map to a specific display client
    */
   syncMapToDisplay(socketId: string): void {
-    this.io.to(socketId).emit('mapSync', this.gameState.blocks);
+    this.io.to(socketId).emit('mapSync', {
+      blocks: this.gameState.blocks,
+      metadata: this.currentMapMetadata
+    });
   }
 
   /**
    * Sync map to all displays (called on round start)
    */
   syncMapToAllDisplays(): void {
-    this.io.to('displays').emit('mapSync', this.gameState.blocks);
+    this.io.to('displays').emit('mapSync', {
+      blocks: this.gameState.blocks,
+      metadata: this.currentMapMetadata
+    });
   }
   
   // Expose PowerUpManager methods for InputHandler

@@ -68,6 +68,8 @@ export interface GameState {
   powerUps: PowerUp[];
   mines: Mine[];
   blocks: Block[]; // Current map blocks
+  mapWidth: number; // Map grid width (for dynamic block sizing)
+  mapHeight: number; // Map grid height (for dynamic block sizing)
   recentPickups: PowerUpPickup[]; // Recent power-up pickups for notifications
   roundEndTime: number | null; // timestamp when round ends
   isRoundActive: boolean;
@@ -116,7 +118,7 @@ export interface ClientToServerEvents {
 export interface ServerToClientEvents {
   gameState: (state: SerializedGameState) => void;
   playerState: (state: PlayerSpecificState) => void; // Optimized single player update
-  mapSync: (blocks: Block[]) => void; // Static map data for displays
+  mapSync: (data: { blocks: Block[], metadata?: MapMetadata }) => void; // Static map data for displays
   playerJoined: (playerId: string, playerName: string) => void;
   playerLeft: (playerId: string) => void;
   roundStart: (endTime: number) => void;
