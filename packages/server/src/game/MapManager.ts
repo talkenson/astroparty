@@ -15,7 +15,16 @@ export class MapManager {
   }
 
   private loadAllMaps(): void {
-    const mapsDir = path.join(__dirname, '../../maps');
+    // Robust path resolution relative to project root (WORKDIR /app in Docker)
+    const mapsDir = path.resolve(process.cwd(), 'packages/server/maps');
+    
+    console.log(`[MapManager] Loading maps from: ${mapsDir}`);
+
+    // Ensure directory exists to prevent crash
+    if (!fs.existsSync(mapsDir)) {
+      console.warn(`[MapManager] Maps directory not found. Creating: ${mapsDir}`);
+      fs.mkdirSync(mapsDir, { recursive: true });
+    }
 
     // Scan directory for all .map.txt files
     const files = fs.readdirSync(mapsDir);
