@@ -40,6 +40,11 @@ export class InputHandler {
       return;
     }
 
+    // Only allow input during PLAYING phase
+    if (this.gameState.phase !== 'PLAYING') {
+      return;
+    }
+
     switch (event.action) {
       case InputActionEnum.THRUST_START:
         this.handleThrustStart(event.playerId);
@@ -121,6 +126,7 @@ export class InputHandler {
 
     // Consume ammo (only 1 even with split shot)
     player.ammo--;
+    this.gameManager.markPlayerDirty(playerId);
     
     // If this was the last bullet, start reload timer
     if (player.ammo < AMMO_CLIP_SIZE) {
@@ -130,6 +136,7 @@ export class InputHandler {
     // Decrement mega bullets if active
     if (isMegaBullet && megaBulletEffect.megaBulletsRemaining) {
       megaBulletEffect.megaBulletsRemaining--;
+      this.gameManager.markPlayerDirty(playerId);
     }
 
     if (hasSplitShot) {

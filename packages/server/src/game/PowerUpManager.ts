@@ -31,7 +31,7 @@ export class PowerUpManager {
   private physicsEngine: PhysicsEngine;
   private lastSpawnTime: number = 0;
 
-  constructor(gameState: GameState, physicsEngine: PhysicsEngine) {
+  constructor(gameState: GameState, physicsEngine: PhysicsEngine, private onPlayerDirty?: (playerId: string) => void) {
     this.gameState = gameState;
     this.physicsEngine = physicsEngine;
   }
@@ -97,6 +97,7 @@ export class PowerUpManager {
         if (distance < POWERUP_RADIUS + SHIP_MAX_RADIUS) {
           // Collision! Apply power-up effect
           this.applyPowerUpEffect(player, powerUp.type);
+          this.onPlayerDirty?.(player.id);
           
           // Add pickup notification
           this.gameState.recentPickups.push({
@@ -209,6 +210,7 @@ export class PowerUpManager {
       expiresAt: now + duration,
       reverseControlsActive: true,
     });
+    this.onPlayerDirty?.(randomEnemy.id);
   }
 
   private updateActivePowerUps(): void {
@@ -258,6 +260,7 @@ export class PowerUpManager {
 
     this.gameState.mines.push(mine);
     player.minesAvailable--;
+    this.onPlayerDirty?.(player.id);
 
     return true;
   }
@@ -308,13 +311,16 @@ export class PowerUpManager {
         // Check shield
         if (player.shieldHits && player.shieldHits > 0) {
           player.shieldHits--;
+          this.onPlayerDirty?.(player.id);
         } else {
           player.isAlive = false;
+          this.onPlayerDirty?.(player.id);
 
           // Award point to mine owner
           const mineOwner = this.gameState.players.get(mine.playerId);
           if (mineOwner) {
             mineOwner.score++;
+            this.onPlayerDirty?.(mineOwner.id);
           }
 
           // Respawn after delay
@@ -324,6 +330,7 @@ export class PowerUpManager {
               player.position = this.getRandomPosition();
               player.velocity = { x: 0, y: 0 };
               player.rotation = Math.random() * Math.PI * 2;
+              this.onPlayerDirty?.(player.id);
             }
           }, 2000);
         }
@@ -365,6 +372,7 @@ export class PowerUpManager {
     if (player.position.y > GAME_HEIGHT) player.position.y -= GAME_HEIGHT;
 
     player.dashCharges--;
+    this.onPlayerDirty?.(player.id);
     return true;
   }
 

@@ -103,11 +103,9 @@ export class Controller {
   private listenForGameState(): void {
     // Listen for optimized player updates
     this.socketClient.on('playerState', (state) => {
-      // Direct update from specific state
       this.updateAmmoDisplay(state.ammo);
       this.updatePlayerColor(state.color);
       this.updatePowerUpIndicators(state);
-      
       this.updateGamePhase(state.phase, state.hostPlayerId);
     });
   }
@@ -118,7 +116,6 @@ export class Controller {
     const playAgainButton = document.getElementById('play-again-button')!;
 
     // Removed verbose logging
-    // console.log(`[Controller] Phase: ${phase}, Host: ${hostPlayerId}, Me: ${this.playerId}`);
 
     if (phase === 'WAITING') {
       // Show start button only to host
@@ -130,7 +127,6 @@ export class Controller {
         controls.style.display = 'none';
         startButton.style.display = 'none';
         playAgainButton.style.display = 'none';
-        // console.log('[Controller] Waiting for host to start...');
       }
     } else if (phase === 'PLAYING') {
       // Show game controls

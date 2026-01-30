@@ -13,10 +13,6 @@ socketClient.on('gameState', (state) => {
   renderer.updateGameState(state);
 });
 
-socketClient.on('mapSync', (blocks) => {
-  renderer.updateMap(blocks);
-});
-
 socketClient.on('roundStart', (endTime) => {
   console.log('Round started, ends at:', new Date(endTime));
 });

@@ -25,7 +25,7 @@ export class PhysicsEngine {
   private gameState: GameState;
   private spatialGrid: Map<string, Block[]>; // Spatial hash for fast collision detection
 
-  constructor(gameState: GameState) {
+  constructor(gameState: GameState, private onPlayerDirty?: (playerId: string) => void) {
     this.gameState = gameState;
     this.spatialGrid = new Map();
     this.rebuildSpatialGrid();
@@ -172,6 +172,7 @@ export class PhysicsEngine {
           if (player.shieldHits && player.shieldHits > 0) {
             // Shield absorbs hit
             player.shieldHits--;
+            this.onPlayerDirty?.(player.id);
             
             // Remove bullet
             this.gameState.bullets.splice(i, 1);
@@ -180,11 +181,13 @@ export class PhysicsEngine {
           
           // Hit!
           player.isAlive = false;
+          this.onPlayerDirty?.(player.id);
           
           // Award point to shooter
           const shooter = this.gameState.players.get(bullet.playerId);
           if (shooter) {
             shooter.score++;
+            this.onPlayerDirty?.(shooter.id);
           }
 
           // Remove bullet
@@ -197,6 +200,7 @@ export class PhysicsEngine {
               player.position = this.getRandomSpawnPosition();
               player.velocity = { x: 0, y: 0 };
               player.rotation = Math.random() * Math.PI * 2;
+              this.onPlayerDirty?.(player.id);
             }
           }, 2_000);
           

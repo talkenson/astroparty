@@ -1,4 +1,4 @@
-import type { SerializedGameState, Block } from '@astroparty/shared';
+import type { SerializedGameState } from '@astroparty/shared';
 import { 
   GAME_WIDTH, 
   GAME_HEIGHT, 
@@ -17,7 +17,6 @@ export class CanvasRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private gameState: SerializedGameState | null = null;
-  private blocks: Block[] = []; // Cache blocks statically
   private scale: number = 1;
   private stars: { x: number; y: number; size: number }[] = [];
 
@@ -46,15 +45,7 @@ export class CanvasRenderer {
 
   updateGameState(state: SerializedGameState): void {
     this.gameState = state;
-    // Fallback: if blocks are in state and we don't have them, use them
-    if (state.blocks && state.blocks.length > 0 && this.blocks.length === 0) {
-      this.blocks = state.blocks;
-    }
     this.updateUI(state);
-  }
-
-  updateMap(blocks: Block[]): void {
-    this.blocks = blocks;
   }
 
   start(): void {
@@ -83,8 +74,8 @@ export class CanvasRenderer {
     // Draw starfield background
     this.drawStarfield();
     
-    // Draw walls (use cached blocks)
-    for (const block of this.blocks) {
+    // Draw walls
+    for (const block of this.gameState.blocks) {
       this.drawBlock(block);
     }
 

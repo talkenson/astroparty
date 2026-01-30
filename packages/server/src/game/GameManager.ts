@@ -7,6 +7,7 @@ import type {
   ClientToServerEvents,
   ServerToClientEvents,
   InputEvent,
+  PlayerSpecificState, // Import added
 } from '@astroparty/shared';
 import {
   GAME_WIDTH,
@@ -35,6 +36,8 @@ export class GameManager {
   private gameLoopInterval: NodeJS.Timeout | null = null;
   private roundDuration: number;
   private playerNames: Map<string, string> = new Map();
+  // Dirty set for network optimization
+  private dirtyPlayers: Set<string> = new Set();
 
   constructor(io: SocketIOServer<ClientToServerEvents, ServerToClientEvents>, roundDuration: number) {
     this.io = io;
@@ -53,9 +56,9 @@ export class GameManager {
       hostPlayerId: null,
     };
 
-    this.physicsEngine = new PhysicsEngine(this.gameState);
+    this.physicsEngine = new PhysicsEngine(this.gameState, (id) => this.markPlayerDirty(id));
     this.inputHandler = new InputHandler(this.gameState, this);
-    this.powerUpManager = new PowerUpManager(this.gameState, this.physicsEngine);
+    this.powerUpManager = new PowerUpManager(this.gameState, this.physicsEngine, (id) => this.markPlayerDirty(id));
     this.mapManager = new MapManager();
   }
 
@@ -113,18 +116,38 @@ export class GameManager {
     // Notify all clients
     this.io.emit('playerJoined', playerId, playerName);
 
+    // Initial state sync for the new player
+    this.markPlayerDirty(playerId);
+
     // Don't auto-start anymore - wait for host to click start
   }
 
   removePlayer(playerId: string): void {
+    // Check if host left
+    const wasHost = this.gameState.hostPlayerId === playerId;
+
     this.gameState.players.delete(playerId);
     this.playerNames.delete(playerId);
+    this.dirtyPlayers.delete(playerId); // Clean up dirty set
     
     // Remove bullets from this player
     this.gameState.bullets = this.gameState.bullets.filter(b => b.playerId !== playerId);
     
     // Remove mines from this player
     this.gameState.mines = this.gameState.mines.filter(m => m.playerId !== playerId);
+
+    // Reassign host if needed
+    if (wasHost) {
+      const remainingPlayers = Array.from(this.gameState.players.keys());
+      if (remainingPlayers.length > 0) {
+        this.gameState.hostPlayerId = remainingPlayers[0];
+        console.log(`Host left. New host assigned: ${this.gameState.hostPlayerId}`);
+      } else {
+        this.gameState.hostPlayerId = null;
+      }
+      // Notify everyone about new host
+      this.markAllPlayersDirty();
+    }
 
     this.io.emit('playerLeft', playerId);
 
@@ -213,11 +236,11 @@ export class GameManager {
         const baseReloadTime = 2000; // AMMO_RELOAD_TIME from constants
         const reloadMultiplier = this.powerUpManager.getReloadMultiplier(player);
         const reloadTime = baseReloadTime * reloadMultiplier;
-        
-        if (timeSinceLastReload >= reloadTime) {
-          player.ammo = Math.min(player.ammo + 1, maxAmmo);
-          player.lastReloadTime = now;
-        }
+                if (timeSinceLastReload >= reloadTime) {
+            player.ammo = Math.min(player.ammo + 1, maxAmmo);
+            player.lastReloadTime = now;
+            this.markPlayerDirty(player.id);
+          }
       }
     }
   }
@@ -257,8 +280,8 @@ export class GameManager {
 
     this.io.emit('roundStart', this.gameState.roundEndTime);
     
-    // Sync map to all displays
-    this.io.to('displays').emit('mapSync', this.gameState.blocks);
+    // Force update for everyone
+    this.markAllPlayersDirty();
   }
 
   private endRound(): void {
@@ -279,6 +302,9 @@ export class GameManager {
     }
 
     this.io.emit('roundEnd', winner);
+
+    // Update all clients with new phase
+    this.markAllPlayersDirty();
 
     // Don't auto-restart - wait for playAgain
   }
@@ -333,7 +359,6 @@ export class GameManager {
   }
 
   private broadcastGameState(): void {
-    // 1. Prepare full state for displays (WITHOUT blocks)
     const serialized: SerializedGameState = {
       players: Array.from(this.gameState.players.values()).map(p => ({
         id: p.id,
@@ -353,7 +378,7 @@ export class GameManager {
       bullets: this.gameState.bullets,
       powerUps: this.gameState.powerUps,
       mines: this.gameState.mines,
-      // blocks: this.gameState.blocks, // Removed from 60fps update
+      blocks: this.gameState.blocks,
       recentPickups: this.gameState.recentPickups,
       roundEndTime: this.gameState.roundEndTime,
       isRoundActive: this.gameState.isRoundActive,
@@ -361,40 +386,46 @@ export class GameManager {
       hostPlayerId: this.gameState.hostPlayerId,
     };
 
-    // Send full state to displays only
     this.io.to('displays').emit('gameState', serialized);
     
-    // 2. Send optimize state to controllers (individual updates)
-    for (const player of this.gameState.players.values()) {
-      // Send only what the controller needs
-        this.io.to(player.id).emit('playerState', {
-        id: player.id,
-        name: player.name,
-        color: player.color,
-        ammo: player.ammo,
-        isAlive: player.isAlive,
-        // ... (rest is same)
-        score: player.score,
-        activePowerUps: player.activePowerUps,
-        shieldHits: player.shieldHits,
-        dashCharges: player.dashCharges,
-        minesAvailable: player.minesAvailable,
-        phase: this.gameState.phase,
-        roundEndTime: this.gameState.roundEndTime,
-        hostPlayerId: this.gameState.hostPlayerId,
-      });
+    // Send optimized state only to dirty players
+    if (this.dirtyPlayers.size > 0) {
+      for (const playerId of this.dirtyPlayers) {
+        const player = this.gameState.players.get(playerId);
+        if (!player) continue;
+
+        const state: PlayerSpecificState = {
+          id: player.id,
+          name: player.name,
+          color: player.color,
+          ammo: player.ammo,
+          isAlive: player.isAlive,
+          score: player.score,
+          activePowerUps: player.activePowerUps,
+          shieldHits: player.shieldHits,
+          dashCharges: player.dashCharges,
+          minesAvailable: player.minesAvailable,
+          phase: this.gameState.phase,
+          roundEndTime: this.gameState.roundEndTime,
+          hostPlayerId: this.gameState.hostPlayerId,
+        };
+
+        this.io.to(player.id).emit('playerState', state);
+      }
+      this.dirtyPlayers.clear();
     }
   }
 
-  /**
-   * Sync map data to a specific client (used when new display connects)
-   */
-  public syncMapToClient(socketId: string): void {
-    if (this.gameState.blocks.length > 0) {
-      this.io.to(socketId).emit('mapSync', this.gameState.blocks);
-    }
+  public markPlayerDirty(playerId: string): void {
+    this.dirtyPlayers.add(playerId);
   }
 
+  private markAllPlayersDirty(): void {
+    for (const id of this.gameState.players.keys()) {
+      this.dirtyPlayers.add(id);
+    }
+  }
+  
   // Expose PowerUpManager methods for InputHandler
   getPowerUpManager(): PowerUpManager {
     return this.powerUpManager;
