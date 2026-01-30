@@ -115,7 +115,7 @@ export class PhysicsEngine {
               player.velocity = { x: 0, y: 0 };
               player.rotation = Math.random() * Math.PI * 2;
             }
-          }, 2000);
+          }, 2_000);
           
           break;
         }

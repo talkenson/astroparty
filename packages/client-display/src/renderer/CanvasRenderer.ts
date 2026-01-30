@@ -1,15 +1,19 @@
 import type { SerializedGameState } from '@astroparty/shared';
-import { GAME_WIDTH, GAME_HEIGHT, SHIP_SIZE, BULLET_RADIUS } from '@astroparty/shared';
+import { GAME_WIDTH, GAME_HEIGHT, SHIP_SIZE, BULLET_RADIUS, SHIP_MAX_RADIUS } from '@astroparty/shared';
 
 export class CanvasRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private gameState: SerializedGameState | null = null;
   private scale: number = 1;
+  private stars: { x: number; y: number; size: number }[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
+ 
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
+    // this.ctx.imageSmoothingEnabled = true;
+    // this.ctx.imageSmoothingQuality = 'high';
     
     this.setupCanvas();
     window.addEventListener('resize', () => this.setupCanvas());
@@ -38,6 +42,14 @@ export class CanvasRenderer {
       requestAnimationFrame(render);
     };
     requestAnimationFrame(render);
+
+    for (let i = 0; i < 100; i++) {
+      this.stars.push({
+        x: Math.random() * GAME_WIDTH,
+        y: Math.random() * GAME_HEIGHT,
+        size: ((i % 3) * 1.3) * (0.7 + Math.random() * 0.5),
+      });
+    }
   }
 
   private render(): void {
@@ -64,16 +76,21 @@ export class CanvasRenderer {
   }
 
   private drawStarfield(): void {
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+
+    // text astroparty with large letter intervals
+    this.ctx.font = 'bold 200px sans-serif';
+    this.ctx.textAlign = 'center';
+    this.ctx.letterSpacing = '12px'; 
+    this.ctx.fillText('Astroparty', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 70);
+    this.ctx.letterSpacing = '1px'; 
+
     // Draw some static stars for atmosphere
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-    for (let i = 0; i < 100; i++) {
-      // Use deterministic "random" based on index for static stars
-      const x = ((i * 7919) % GAME_WIDTH);
-      const y = ((i * 6571) % GAME_HEIGHT);
-      const size = ((i % 3) + 1) * 0.5;
-      
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+
+    for (const star of this.stars) {
       this.ctx.beginPath();
-      this.ctx.arc(x, y, size, 0, Math.PI * 2);
+      this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
       this.ctx.fill();
     }
   }
@@ -86,15 +103,20 @@ export class CanvasRenderer {
     // Draw ship as triangle
     this.ctx.fillStyle = player.color;
     this.ctx.strokeStyle = 'white';
-    this.ctx.lineWidth = 2;
+    this.ctx.lineWidth = 1;
     
     this.ctx.beginPath();
     this.ctx.moveTo(SHIP_SIZE * 0.6, 0); // Nose
-    this.ctx.lineTo(-SHIP_SIZE * 0.4, -SHIP_SIZE * 0.3); // Left wing
-    this.ctx.lineTo(-SHIP_SIZE * 0.4, SHIP_SIZE * 0.3); // Right wing
+    this.ctx.lineTo(-SHIP_SIZE * 0.5, -SHIP_SIZE * 0.4); // Left wing
+    this.ctx.lineTo(-SHIP_SIZE * 0.5, SHIP_SIZE * 0.4); // Right wing
     this.ctx.closePath();
-    
+
     this.ctx.fill();
+    this.ctx.stroke();
+
+    this.ctx.beginPath();
+    this.ctx.arc(0,0, SHIP_MAX_RADIUS, 0, Math.PI * 2);
+    this.ctx.closePath();
     this.ctx.stroke();
 
     this.ctx.restore();
