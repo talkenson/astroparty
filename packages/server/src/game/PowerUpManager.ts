@@ -94,6 +94,13 @@ export class PowerUpManager {
           // Collision! Apply power-up effect
           this.applyPowerUpEffect(player, powerUp.type);
           
+          // Add pickup notification
+          this.gameState.recentPickups.push({
+            type: powerUp.type,
+            position: { x: powerUp.position.x, y: powerUp.position.y },
+            timestamp: Date.now(),
+          });
+          
           // Remove power-up
           this.gameState.powerUps.splice(i, 1);
           break;

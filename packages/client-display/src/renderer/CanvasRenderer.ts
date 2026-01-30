@@ -94,6 +94,9 @@ export class CanvasRenderer {
         this.drawShip(player);
       }
     }
+    
+    // Draw notification
+    this.drawPowerUpNotification();
   }
 
   private drawStarfield(): void {
@@ -228,7 +231,67 @@ export class CanvasRenderer {
     this.ctx.fillStyle = 'white';
     this.ctx.fillText(config.icon, 1, 1);
     
+    // Draw name below
+    this.ctx.font = 'bold 12px Arial';
+    this.ctx.textBaseline = 'top';
+    this.ctx.fillStyle = config.color;
+    this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeText(config.name, 0, POWERUP_RADIUS + 8);
+    this.ctx.fillText(config.name, 0, POWERUP_RADIUS + 8);
+    
     this.ctx.restore();
+  }
+  
+  private drawPowerUpNotification(): void {
+    if (!this.gameState) return;
+    
+    const now = Date.now();
+    const duration = 2000; // 2 seconds
+    
+    // Draw each recent pickup
+    for (const pickup of this.gameState.recentPickups) {
+      const elapsed = now - pickup.timestamp;
+      if (elapsed > duration) continue;
+      
+      const config = POWERUP_CONFIGS[pickup.type];
+      
+      // Animate: fade in, scale up, fade out
+      const progress = elapsed / duration;
+      let alpha = 1;
+      let scale = 1;
+      
+      if (progress < 0.15) {
+        // Fade in + scale up (faster)
+        alpha = progress / 0.15;
+        scale = 0.8 + (progress / 0.15) * 0.4; // 0.8 -> 1.2
+      } else if (progress > 0.7) {
+        // Fade out
+        alpha = (1 - progress) / 0.3;
+        scale = 1.2 + ((progress - 0.7) / 0.3) * 0.3; // 1.2 -> 1.5
+      } else {
+        scale = 1.2;
+      }
+      
+      this.ctx.save();
+      this.ctx.globalAlpha = alpha;
+      this.ctx.translate(pickup.position.x, pickup.position.y);
+      
+      const fontSize = Math.floor(24 * scale);
+      this.ctx.font = `bold ${fontSize}px Arial`;
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
+      
+      // Draw with outline
+      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+      this.ctx.lineWidth = 4;
+      this.ctx.strokeText(config.name, 0, -50);
+      
+      this.ctx.fillStyle = config.color;
+      this.ctx.fillText(config.name, 0, -50);
+      
+      this.ctx.restore();
+    }
   }
 
   private drawMine(mine: any): void {

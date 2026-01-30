@@ -39,6 +39,7 @@ export class GameManager {
       bullets: [],
       powerUps: [],
       mines: [],
+      recentPickups: [],
       roundEndTime: null,
       isRoundActive: false,
       phase: 'WAITING',
@@ -175,6 +176,12 @@ export class GameManager {
 
     // Handle ammo reload
     this.updateAmmo();
+    
+    // Clean up old pickup notifications (keep for 3 seconds)
+    const now = Date.now();
+    this.gameState.recentPickups = this.gameState.recentPickups.filter(
+      pickup => now - pickup.timestamp < 3000
+    );
 
     // Broadcast game state to all clients
     this.broadcastGameState();
@@ -228,8 +235,9 @@ export class GameManager {
 
     this.gameState.bullets = [];
     
-    // Clear all power-ups and mines
+    // Clear all power-ups, mines, and pickups
     this.powerUpManager.clearAllPowerUps();
+    this.gameState.recentPickups = [];
 
     this.io.emit('roundStart', this.gameState.roundEndTime);
   }
@@ -283,6 +291,7 @@ export class GameManager {
       bullets: this.gameState.bullets,
       powerUps: this.gameState.powerUps,
       mines: this.gameState.mines,
+      recentPickups: this.gameState.recentPickups,
       roundEndTime: this.gameState.roundEndTime,
       isRoundActive: this.gameState.isRoundActive,
       phase: this.gameState.phase,

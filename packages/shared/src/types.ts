@@ -46,6 +46,7 @@ export interface GameState {
   bullets: Bullet[];
   powerUps: PowerUp[];
   mines: Mine[];
+  recentPickups: PowerUpPickup[]; // Recent power-up pickups for notifications
   roundEndTime: number | null; // timestamp when round ends
   isRoundActive: boolean;
   phase: GamePhase; // Current game phase
@@ -53,7 +54,14 @@ export interface GameState {
 }
 
 // Import Mine and PowerUp from PowerUpTypes
-import type { Mine, PowerUp } from './PowerUpTypes.js';
+import type { Mine, PowerUp, PowerUpType } from './PowerUpTypes.js';
+
+// Power-up pickup event (for client notifications)
+export interface PowerUpPickup {
+  type: PowerUpType;
+  position: Vector2D;
+  timestamp: number;
+}
 
 // ========================================
 // Socket Event Types
@@ -111,6 +119,7 @@ export interface SerializedGameState {
   bullets: Bullet[];
   powerUps: PowerUp[];
   mines: Mine[];
+  recentPickups: PowerUpPickup[];
   roundEndTime: number | null;
   isRoundActive: boolean;
   phase: GamePhase;
