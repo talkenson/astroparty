@@ -17,13 +17,34 @@ import {
   SPEED_BOOST_MULTIPLIER,
   SPEED_BOOST_ACCELERATION_MULTIPLIER,
   BLOCK_SIZE,
+  GRID_WIDTH,
+  GRID_HEIGHT,
 } from '@astroparty/shared';
 
 export class PhysicsEngine {
   private gameState: GameState;
+  private spatialGrid: Map<string, Block[]>; // Spatial hash for fast collision detection
 
   constructor(gameState: GameState) {
     this.gameState = gameState;
+    this.spatialGrid = new Map();
+    this.rebuildSpatialGrid();
+  }
+  
+  /**
+   * Rebuild spatial grid when map changes
+   * Called by GameManager when loading new map
+   */
+  rebuildSpatialGrid(): void {
+    this.spatialGrid.clear();
+    
+    for (const block of this.gameState.blocks) {
+      const key = `${block.gridX},${block.gridY}`;
+      if (!this.spatialGrid.has(key)) {
+        this.spatialGrid.set(key, []);
+      }
+      this.spatialGrid.get(key)!.push(block);
+    }
   }
 
   update(): void {
@@ -287,13 +308,31 @@ export class PhysicsEngine {
 
   /**
    * Check if a circle collides with any wall block
+   * Uses spatial grid for O(1) lookup instead of O(n)
    */
   private collidesWithWalls(x: number, y: number, radius: number): boolean {
-    for (const block of this.gameState.blocks) {
-      if (this.circleRectCollision(x, y, radius, block)) {
-        return true;
+    // Calculate which grid cells the circle could overlap
+    const minGridX = Math.max(0, Math.floor((x - radius) / BLOCK_SIZE));
+    const maxGridX = Math.min(GRID_WIDTH - 1, Math.floor((x + radius) / BLOCK_SIZE));
+    const minGridY = Math.max(0, Math.floor((y - radius) / BLOCK_SIZE));
+    const maxGridY = Math.min(GRID_HEIGHT - 1, Math.floor((y + radius) / BLOCK_SIZE));
+
+    // Check only blocks in the relevant grid cells
+    for (let gridY = minGridY; gridY <= maxGridY; gridY++) {
+      for (let gridX = minGridX; gridX <= maxGridX; gridX++) {
+        const key = `${gridX},${gridY}`;
+        const blocks = this.spatialGrid.get(key);
+        
+        if (blocks) {
+          for (const block of blocks) {
+            if (this.circleRectCollision(x, y, radius, block)) {
+              return true;
+            }
+          }
+        }
       }
     }
+    
     return false;
   }
 
@@ -321,34 +360,52 @@ export class PhysicsEngine {
   /**
    * Get the collision normal for proper reflection physics
    * Returns null if no collision, or a normalized vector pointing away from the wall
+   * Uses spatial grid for optimization
    */
   private getWallCollisionNormal(cx: number, cy: number, radius: number): { x: number; y: number } | null {
-    for (const block of this.gameState.blocks) {
-      if (this.circleRectCollision(cx, cy, radius, block)) {
-        // Found collision, calculate normal
-        const rectX = block.gridX * BLOCK_SIZE;
-        const rectY = block.gridY * BLOCK_SIZE;
-        const rectWidth = BLOCK_SIZE;
-        const rectHeight = BLOCK_SIZE;
+    // Calculate which grid cells the circle could overlap
+    const minGridX = Math.max(0, Math.floor((cx - radius) / BLOCK_SIZE));
+    const maxGridX = Math.min(GRID_WIDTH - 1, Math.floor((cx + radius) / BLOCK_SIZE));
+    const minGridY = Math.max(0, Math.floor((cy - radius) / BLOCK_SIZE));
+    const maxGridY = Math.min(GRID_HEIGHT - 1, Math.floor((cy + radius) / BLOCK_SIZE));
 
-        // Find the closest point on the rectangle to the circle
-        const closestX = Math.max(rectX, Math.min(cx, rectX + rectWidth));
-        const closestY = Math.max(rectY, Math.min(cy, rectY + rectHeight));
+    // Check only blocks in the relevant grid cells
+    for (let gridY = minGridY; gridY <= maxGridY; gridY++) {
+      for (let gridX = minGridX; gridX <= maxGridX; gridX++) {
+        const key = `${gridX},${gridY}`;
+        const blocks = this.spatialGrid.get(key);
+        
+        if (blocks) {
+          for (const block of blocks) {
+            if (this.circleRectCollision(cx, cy, radius, block)) {
+              // Found collision, calculate normal
+              const rectX = block.gridX * BLOCK_SIZE;
+              const rectY = block.gridY * BLOCK_SIZE;
+              const rectWidth = BLOCK_SIZE;
+              const rectHeight = BLOCK_SIZE;
 
-        // Calculate normal direction (from closest point to circle center)
-        const normalX = cx - closestX;
-        const normalY = cy - closestY;
+              // Find the closest point on the rectangle to the circle
+              const closestX = Math.max(rectX, Math.min(cx, rectX + rectWidth));
+              const closestY = Math.max(rectY, Math.min(cy, rectY + rectHeight));
 
-        // Normalize the vector
-        const length = Math.sqrt(normalX * normalX + normalY * normalY);
-        if (length > 0) {
-          return {
-            x: normalX / length,
-            y: normalY / length,
-          };
+              // Calculate normal direction (from closest point to circle center)
+              const normalX = cx - closestX;
+              const normalY = cy - closestY;
+
+              // Normalize the vector
+              const length = Math.sqrt(normalX * normalX + normalY * normalY);
+              if (length > 0) {
+                return {
+                  x: normalX / length,
+                  y: normalY / length,
+                };
+              }
+            }
+          }
         }
       }
     }
+    
     return null; // No collision
   }
 }
