@@ -284,6 +284,9 @@ export class GameManager {
 
     this.io.emit('roundStart', this.gameState.roundEndTime);
     
+    // Sync new map to all displays
+    this.syncMapToAllDisplays();
+    
     // Force update for everyone
     this.markAllPlayersDirty();
   }
@@ -382,7 +385,7 @@ export class GameManager {
       bullets: this.gameState.bullets,
       powerUps: this.gameState.powerUps,
       mines: this.gameState.mines,
-      blocks: this.gameState.blocks,
+      // blocks removed - sent separately via mapSync
       recentPickups: this.gameState.recentPickups,
       roundEndTime: this.gameState.roundEndTime,
       isRoundActive: this.gameState.isRoundActive,
@@ -428,6 +431,20 @@ export class GameManager {
     for (const id of this.gameState.players.keys()) {
       this.dirtyPlayers.add(id);
     }
+  }
+
+  /**
+   * Sync map to a specific display client
+   */
+  syncMapToDisplay(socketId: string): void {
+    this.io.to(socketId).emit('mapSync', this.gameState.blocks);
+  }
+
+  /**
+   * Sync map to all displays (called on round start)
+   */
+  syncMapToAllDisplays(): void {
+    this.io.to('displays').emit('mapSync', this.gameState.blocks);
   }
   
   // Expose PowerUpManager methods for InputHandler

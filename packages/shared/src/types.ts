@@ -136,7 +136,7 @@ export interface SerializedGameState {
   bullets: Bullet[];
   powerUps: PowerUp[];
   mines: Mine[];
-  blocks: Block[];
+  blocks?: Block[]; // Optional - sent separately via mapSync for displays
   recentPickups: PowerUpPickup[];
   roundEndTime: number | null;
   isRoundActive: boolean;

@@ -67,6 +67,9 @@ const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(fastif
     origin: '*', // In production, restrict this to your domain
     methods: ['GET', 'POST'],
   },
+  perMessageDeflate: {
+    threshold: 1024, // Compress messages larger than 1KB
+  },
 });
 
 // Initialize Game Manager
@@ -79,6 +82,8 @@ io.on('connection', (socket) => {
 
   if (clientType === 'display') {
     socket.join('displays');
+    // Send map data immediately to new display
+    gameManager.syncMapToDisplay(socket.id);
   } else {
     socket.join('controllers');
   }

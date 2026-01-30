@@ -1,4 +1,4 @@
-import type { SerializedGameState } from '@astroparty/shared';
+import type { SerializedGameState, Block } from '@astroparty/shared';
 import { 
   GAME_WIDTH, 
   GAME_HEIGHT, 
@@ -17,6 +17,7 @@ export class CanvasRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private gameState: SerializedGameState | null = null;
+  private blocks: Block[] = []; // Cached map blocks from mapSync
   private scale: number = 1;
   private stars: { x: number; y: number; size: number }[] = [];
 
@@ -48,6 +49,13 @@ export class CanvasRenderer {
     this.updateUI(state);
   }
 
+  /**
+   * Update cached map blocks (called via mapSync event)
+   */
+  updateMap(blocks: Block[]): void {
+    this.blocks = blocks;
+  }
+
   start(): void {
     const render = () => {
       this.render();
@@ -74,8 +82,8 @@ export class CanvasRenderer {
     // Draw starfield background
     this.drawStarfield();
     
-    // Draw walls
-    for (const block of this.gameState.blocks) {
+    // Draw walls (from cached blocks)
+    for (const block of this.blocks) {
       this.drawBlock(block);
     }
 
