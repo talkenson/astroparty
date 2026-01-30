@@ -130,6 +130,10 @@ export class GameManager {
     this.playerNames.delete(playerId);
     this.dirtyPlayers.delete(playerId); // Clean up dirty set
     
+    // Clear any pending respawn timers
+    this.physicsEngine.clearRespawnTimer(playerId);
+    this.powerUpManager.clearRespawnTimer(playerId);
+    
     // Remove bullets from this player
     this.gameState.bullets = this.gameState.bullets.filter(b => b.playerId !== playerId);
     

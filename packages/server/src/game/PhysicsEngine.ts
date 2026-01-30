@@ -24,6 +24,7 @@ import {
 export class PhysicsEngine {
   private gameState: GameState;
   private spatialGrid: Map<string, Block[]>; // Spatial hash for fast collision detection
+  private respawnTimers: Map<string, NodeJS.Timeout> = new Map(); // Track respawn timers
 
   constructor(gameState: GameState, private onPlayerDirty?: (playerId: string) => void) {
     this.gameState = gameState;
@@ -194,7 +195,7 @@ export class PhysicsEngine {
           this.gameState.bullets.splice(i, 1);
           
           // Respawn killed player after delay
-          setTimeout(() => {
+          const respawnTimer = setTimeout(() => {
             if (this.gameState.players.has(player.id)) {
               player.isAlive = true;
               player.position = this.getRandomSpawnPosition();
@@ -202,7 +203,12 @@ export class PhysicsEngine {
               player.rotation = Math.random() * Math.PI * 2;
               this.onPlayerDirty?.(player.id);
             }
+            this.respawnTimers.delete(player.id);
           }, 2_000);
+          
+          // Clear any existing timer and store new one
+          this.clearRespawnTimer(player.id);
+          this.respawnTimers.set(player.id, respawnTimer);
           
           break;
         }
@@ -304,6 +310,17 @@ export class PhysicsEngine {
       x: Math.random() * GAME_WIDTH,
       y: Math.random() * GAME_HEIGHT,
     };
+  }
+
+  /**
+   * Clear respawn timer for a player (called on disconnect)
+   */
+  clearRespawnTimer(playerId: string): void {
+    const timer = this.respawnTimers.get(playerId);
+    if (timer) {
+      clearTimeout(timer);
+      this.respawnTimers.delete(playerId);
+    }
   }
 
   // ========================================

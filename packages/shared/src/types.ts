@@ -109,6 +109,7 @@ export interface ClientToServerEvents {
 export interface ServerToClientEvents {
   gameState: (state: SerializedGameState) => void;
   playerState: (state: PlayerSpecificState) => void; // Optimized single player update
+  mapSync: (blocks: Block[]) => void; // Static map data for displays
   playerJoined: (playerId: string, playerName: string) => void;
   playerLeft: (playerId: string) => void;
   roundStart: (endTime: number) => void;

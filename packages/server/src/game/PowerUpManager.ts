@@ -30,6 +30,7 @@ export class PowerUpManager {
   private gameState: GameState;
   private physicsEngine: PhysicsEngine;
   private lastSpawnTime: number = 0;
+  private respawnTimers: Map<string, NodeJS.Timeout> = new Map(); // Track mine respawn timers
 
   constructor(gameState: GameState, physicsEngine: PhysicsEngine, private onPlayerDirty?: (playerId: string) => void) {
     this.gameState = gameState;
@@ -217,6 +218,8 @@ export class PowerUpManager {
     const now = Date.now();
 
     for (const player of this.gameState.players.values()) {
+      const sizeBefore = player.activePowerUps.length;
+      
       // Remove expired power-ups
       player.activePowerUps = player.activePowerUps.filter(effect => {
         // Check expiration
@@ -238,9 +241,17 @@ export class PowerUpManager {
         return true;
       });
 
+      // Notify if power-ups changed
+      if (sizeBefore !== player.activePowerUps.length) {
+        this.onPlayerDirty?.(player.id);
+      }
+
       // Clean up shield hits if no shield effect
       if (!player.activePowerUps.some(e => e.type === PowerUpType.SHIELD)) {
-        player.shieldHits = undefined;
+        if (player.shieldHits !== undefined) {
+          player.shieldHits = undefined;
+          this.onPlayerDirty?.(player.id);
+        }
       }
     }
   }
@@ -324,7 +335,7 @@ export class PowerUpManager {
           }
 
           // Respawn after delay
-          setTimeout(() => {
+          const respawnTimer = setTimeout(() => {
             if (this.gameState.players.has(player.id)) {
               player.isAlive = true;
               player.position = this.getRandomPosition();
@@ -332,7 +343,12 @@ export class PowerUpManager {
               player.rotation = Math.random() * Math.PI * 2;
               this.onPlayerDirty?.(player.id);
             }
+            this.respawnTimers.delete(player.id);
           }, 2000);
+          
+          // Clear any existing timer and store new one
+          this.clearRespawnTimer(player.id);
+          this.respawnTimers.set(player.id, respawnTimer);
         }
       }
     }
@@ -398,6 +414,17 @@ export class PowerUpManager {
     this.gameState.powerUps = [];
     this.gameState.mines = [];
     this.lastSpawnTime = Date.now(); // Reset spawn timer
+  }
+
+  /**
+   * Clear respawn timer for a player (called on disconnect)
+   */
+  clearRespawnTimer(playerId: string): void {
+    const timer = this.respawnTimers.get(playerId);
+    if (timer) {
+      clearTimeout(timer);
+      this.respawnTimers.delete(playerId);
+    }
   }
 
   private getRandomPosition(): { x: number; y: number } {
