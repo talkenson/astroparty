@@ -1,5 +1,16 @@
 import type { SerializedGameState } from '@astroparty/shared';
-import { GAME_WIDTH, GAME_HEIGHT, SHIP_SIZE, BULLET_RADIUS, SHIP_MAX_RADIUS } from '@astroparty/shared';
+import { 
+  GAME_WIDTH, 
+  GAME_HEIGHT, 
+  SHIP_SIZE, 
+  BULLET_RADIUS, 
+  SHIP_MAX_RADIUS,
+  POWERUP_RADIUS,
+  POWERUP_CONFIGS,
+  MINE_RADIUS,
+  MEGA_BULLET_SIZE_MULTIPLIER,
+  PowerUpType,
+} from '@astroparty/shared';
 
 export class CanvasRenderer {
   private canvas: HTMLCanvasElement;
@@ -62,6 +73,16 @@ export class CanvasRenderer {
     // Draw starfield background
     this.drawStarfield();
 
+    // Draw power-ups
+    for (const powerUp of this.gameState.powerUps) {
+      this.drawPowerUp(powerUp);
+    }
+
+    // Draw mines
+    for (const mine of this.gameState.mines) {
+      this.drawMine(mine);
+    }
+
     // Draw bullets
     for (const bullet of this.gameState.bullets) {
       this.drawBullet(bullet);
@@ -95,10 +116,41 @@ export class CanvasRenderer {
     }
   }
 
-  private drawShip(player: { position: { x: number; y: number }; rotation: number; color: string; name: string }): void {
+  private drawShip(player: any): void {
+    const hasGhost = player.activePowerUps?.some((e: any) => e.type === PowerUpType.GHOST_MODE);
+    const hasShield = player.shieldHits && player.shieldHits > 0;
+    
     this.ctx.save();
     this.ctx.translate(player.position.x, player.position.y);
     this.ctx.rotate(player.rotation);
+
+    // Draw shield effect first (behind ship)
+    if (hasShield) {
+      this.ctx.strokeStyle = '#2ECC71';
+      this.ctx.lineWidth = 3;
+      this.ctx.globalAlpha = 0.6;
+      this.ctx.beginPath();
+      this.ctx.arc(0, 0, SHIP_MAX_RADIUS + 5, 0, Math.PI * 2);
+      this.ctx.stroke();
+      
+      // Shield hits indicator
+      for (let i = 0; i < player.shieldHits; i++) {
+        const angle = (i / player.shieldHits) * Math.PI * 2;
+        const x = Math.cos(angle) * (SHIP_MAX_RADIUS + 8);
+        const y = Math.sin(angle) * (SHIP_MAX_RADIUS + 8);
+        this.ctx.fillStyle = '#2ECC71';
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 2, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
+      
+      this.ctx.globalAlpha = 1;
+    }
+
+    // Set alpha for ghost mode
+    if (hasGhost) {
+      this.ctx.globalAlpha = 0.4;
+    }
 
     // Draw ship as triangle
     this.ctx.fillStyle = player.color;
@@ -114,11 +166,12 @@ export class CanvasRenderer {
     this.ctx.fill();
     this.ctx.stroke();
 
-    this.ctx.beginPath();
-    this.ctx.arc(0,0, SHIP_MAX_RADIUS, 0, Math.PI * 2);
-    this.ctx.closePath();
-    this.ctx.stroke();
+    // this.ctx.beginPath();
+    // this.ctx.arc(0,0, SHIP_MAX_RADIUS, 0, Math.PI * 2);
+    // this.ctx.closePath();
+    // this.ctx.stroke();
 
+    this.ctx.globalAlpha = 1;
     this.ctx.restore();
 
     // Draw player name above ship
@@ -128,11 +181,90 @@ export class CanvasRenderer {
     this.ctx.fillText(player.name, player.position.x, player.position.y - SHIP_SIZE);
   }
 
-  private drawBullet(bullet: { position: { x: number; y: number } }): void {
-    this.ctx.fillStyle = '#ffff00';
+  private drawBullet(bullet: any): void {
+    const radius = bullet.isMega ? BULLET_RADIUS * MEGA_BULLET_SIZE_MULTIPLIER : BULLET_RADIUS;
+    const color = bullet.isMega ? '#FF4444' : '#ffff00';
+    
+    this.ctx.fillStyle = color;
     this.ctx.beginPath();
-    this.ctx.arc(bullet.position.x, bullet.position.y, BULLET_RADIUS, 0, Math.PI * 2);
+    this.ctx.arc(bullet.position.x, bullet.position.y, radius, 0, Math.PI * 2);
     this.ctx.fill();
+    
+    // Add glow effect for mega bullets
+    if (bullet.isMega) {
+      this.ctx.strokeStyle = '#FF8888';
+      this.ctx.lineWidth = 2;
+      this.ctx.globalAlpha = 0.5;
+      this.ctx.beginPath();
+      this.ctx.arc(bullet.position.x, bullet.position.y, radius + 2, 0, Math.PI * 2);
+      this.ctx.stroke();
+      this.ctx.globalAlpha = 1;
+    }
+  }
+
+  private drawPowerUp(powerUp: any): void {
+    const config = POWERUP_CONFIGS[powerUp.type as PowerUpType];
+    
+    this.ctx.save();
+    this.ctx.translate(powerUp.position.x, powerUp.position.y);
+    
+    // Draw pulsing circle
+    const pulse = Math.sin(Date.now() / 200) * 0.2 + 0.8;
+    this.ctx.strokeStyle = config.color;
+    this.ctx.fillStyle = config.color + '40'; // Add alpha
+    this.ctx.lineWidth = 2;
+    this.ctx.globalAlpha = pulse;
+    
+    this.ctx.beginPath();
+    this.ctx.arc(0, 0, POWERUP_RADIUS, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+    
+    // Draw icon/emoji
+    this.ctx.globalAlpha = 1;
+    this.ctx.font = '24px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    this.ctx.fillStyle = 'white';
+    this.ctx.fillText(config.icon, 1, 1);
+    
+    this.ctx.restore();
+  }
+
+  private drawMine(mine: any): void {
+    this.ctx.save();
+    this.ctx.translate(mine.position.x, mine.position.y);
+    
+    // Draw mine body
+    this.ctx.fillStyle = '#E74C3C';
+    this.ctx.strokeStyle = '#C0392B';
+    this.ctx.lineWidth = 2;
+    
+    this.ctx.beginPath();
+    this.ctx.arc(0, 0, MINE_RADIUS, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+    
+    // Draw spikes
+    this.ctx.strokeStyle = '#E74C3C';
+    this.ctx.lineWidth = 3;
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      this.ctx.beginPath();
+      this.ctx.moveTo(Math.cos(angle) * MINE_RADIUS, Math.sin(angle) * MINE_RADIUS);
+      this.ctx.lineTo(Math.cos(angle) * (MINE_RADIUS + 5), Math.sin(angle) * (MINE_RADIUS + 5));
+      this.ctx.stroke();
+    }
+    
+    // Blinking light
+    if (Math.floor(Date.now() / 500) % 2 === 0) {
+      this.ctx.fillStyle = '#FF0000';
+      this.ctx.beginPath();
+      this.ctx.arc(0, 0, 3, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
+    
+    this.ctx.restore();
   }
 
   private updateUI(state: SerializedGameState): void {

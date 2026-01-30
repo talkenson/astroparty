@@ -32,6 +32,8 @@ export class Controller {
   private setupControls(): void {
     const thrustButton = document.getElementById('thrust-button')!;
     const fireButton = document.getElementById('fire-button')!;
+    const mineButton = document.getElementById('mine-button');
+    const dashButton = document.getElementById('dash-button');
 
     // Thrust button - press to thrust, release to rotate
     const handleThrustStart = (e: Event) => {
@@ -66,6 +68,28 @@ export class Controller {
 
     fireButton.addEventListener('mousedown', handleFire);
     fireButton.addEventListener('touchstart', handleFire);
+    
+    // Mine button - tap to place mine
+    if (mineButton) {
+      const handleMine = (e: Event) => {
+        e.preventDefault();
+        this.sendInput(InputAction.PLACE_MINE);
+        this.vibrate(15);
+      };
+      mineButton.addEventListener('mousedown', handleMine);
+      mineButton.addEventListener('touchstart', handleMine);
+    }
+    
+    // Dash button - tap to dash
+    if (dashButton) {
+      const handleDash = (e: Event) => {
+        e.preventDefault();
+        this.sendInput(InputAction.DASH);
+        this.vibrate(25);
+      };
+      dashButton.addEventListener('mousedown', handleDash);
+      dashButton.addEventListener('touchstart', handleDash);
+    }
   }
 
   private sendInput(action: InputAction): void {
@@ -82,6 +106,7 @@ export class Controller {
       if (player) {
         this.updateAmmoDisplay(player.ammo);
         this.updatePlayerColor(player.color);
+        this.updatePowerUpIndicators(player);
       }
       
       // Update game phase UI
@@ -151,6 +176,43 @@ export class Controller {
       rgba(10, 10, 21, 1) 0%, 
       ${color}22 100%
     )`;
+  }
+  
+  private updatePowerUpIndicators(player: any): void {
+    // Update shield indicator
+    const shieldDisplay = document.getElementById('shield-display');
+    if (shieldDisplay) {
+      if (player.shieldHits && player.shieldHits > 0) {
+        shieldDisplay.style.display = 'block';
+        shieldDisplay.textContent = `🛡️ ${player.shieldHits}`;
+      } else {
+        shieldDisplay.style.display = 'none';
+      }
+    }
+    
+    // Update dash charges
+    const dashDisplay = document.getElementById('dash-display');
+    const dashButton = document.getElementById('dash-button');
+    if (dashDisplay && dashButton) {
+      if (player.dashCharges && player.dashCharges > 0) {
+        dashDisplay.textContent = `${player.dashCharges}`;
+        dashButton.style.display = 'flex';
+      } else {
+        dashButton.style.display = 'none';
+      }
+    }
+    
+    // Update mine availability
+    const mineDisplay = document.getElementById('mine-display');
+    const mineButton = document.getElementById('mine-button');
+    if (mineDisplay && mineButton) {
+      if (player.minesAvailable && player.minesAvailable > 0) {
+        mineDisplay.textContent = `${player.minesAvailable}`;
+        mineButton.style.display = 'flex';
+      } else {
+        mineButton.style.display = 'none';
+      }
+    }
   }
 
   private vibrate(duration: number): void {

@@ -212,6 +212,67 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
     }
+    
+    /* Power-up indicators */
+    #shield-display {
+      margin-top: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #2ECC71;
+      display: none;
+    }
+    
+    .special-button {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      font-size: 32px;
+      color: white;
+      user-select: none;
+      cursor: pointer;
+      transition: all 0.1s;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    
+    .special-button:active {
+      transform: scale(0.95);
+    }
+    
+    .special-button .count {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    
+    #mine-button {
+      background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+    }
+    
+    #dash-button {
+      background: linear-gradient(135deg, #1ABC9C 0%, #16A085 100%);
+    }
+    
+    #special-controls {
+      display: flex;
+      gap: 15px;
+      padding: 15px;
+      padding-bottom: max(15px, env(safe-area-inset-bottom));
+      justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -230,6 +291,7 @@
           <div id="player-color" style="width: 20px; height: 20px; border-radius: 50%; background: white; border: 2px solid #fff;"></div>
           <div id="player-name">-</div>
         </div>
+        <div id="shield-display"></div>
         <div id="ammo-display">
           <div class="ammo-dot loaded"></div>
           <div class="ammo-dot loaded"></div>
@@ -258,6 +320,19 @@
         <div id="fire-button" class="control-button">
           <div>🔥</div>
           <div class="button-label">FIRE</div>
+        </div>
+      </div>
+      
+      <!-- Special action buttons -->
+      <div id="special-controls">
+        <div id="mine-button" class="special-button">
+          💣
+          <div id="mine-display" class="count">3</div>
+        </div>
+        
+        <div id="dash-button" class="special-button">
+          ⚡
+          <div id="dash-display" class="count">3</div>
         </div>
       </div>
     </div>

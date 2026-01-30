@@ -79,3 +79,31 @@ export const ROUND_END_DELAY = 10000; // 10 seconds
 // Bullet constants
 export const BULLET_RADIUS = 3;
 export const BULLET_LIFETIME = 3000; // 3 seconds before auto-removal
+
+// Power-up constants
+export const POWERUP_RADIUS = 20; // Power-up size
+export const POWERUP_LIFETIME = 15000; // 15 seconds
+export const POWERUP_SPAWN_INTERVAL = 10000; // Spawn every 10 seconds
+export const MAX_POWERUPS_ON_MAP = 3; // Maximum power-ups on the map
+
+// Mine constants
+export const MINE_RADIUS = 15; // Mine size
+export const MINE_LIFETIME = 30000; // 30 seconds
+export const MINE_EXPLOSION_RADIUS = 50; // Explosion radius
+
+// Power-up effect modifiers
+export const AMMO_BOOST_SIZE = 8; // Max ammo when boosted
+export const AMMO_BOOST_RELOAD_MULTIPLIER = 0.5; // 2x faster reload
+export const SPEED_BOOST_MULTIPLIER = 1.5; // 1.5x max speed
+export const SPEED_BOOST_ACCELERATION_MULTIPLIER = 1.3; // 1.3x acceleration
+export const RAPID_FIRE_RELOAD_MULTIPLIER = 0.33; // 3x faster reload
+export const MEGA_BULLET_SIZE_MULTIPLIER = 2; // 2x bullet size
+export const MEGA_BULLET_SPEED_MULTIPLIER = 1.5; // 1.5x bullet speed
+export const MEGA_BULLET_COUNT = 5; // Number of mega bullets
+export const SPLIT_SHOT_ANGLE = 17; // Degrees between bullets (center + 2 sides)
+export const SPLIT_SHOT_COUNT = 3; // Number of bullets
+export const TELEPORT_DASH_DISTANCE = 200; // Pixels
+export const TELEPORT_DASH_CHARGES = 3; // Number of dashes
+export const SHIELD_MAX_HITS = 3; // Maximum hits shield can absorb
+export const MINE_TRAP_COUNT = 3; // Number of mines given
+

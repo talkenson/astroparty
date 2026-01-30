@@ -2,6 +2,8 @@
 // Core Game Types
 // ========================================
 
+import type { ActivePowerUpEffect } from './PowerUpTypes.js';
+
 export interface Vector2D {
   x: number;
   y: number;
@@ -20,6 +22,12 @@ export interface Player {
   isThrustActive: boolean; // whether player is currently thrusting
   turnStartTime: number; // timestamp when rotation started (for acceleration)
   lastReloadTime: number; // timestamp of last ammo reload
+  
+  // Power-up related fields
+  activePowerUps: ActivePowerUpEffect[];
+  shieldHits?: number; // Remaining hits shield can absorb
+  dashCharges?: number; // Remaining teleport dash charges
+  minesAvailable?: number; // Remaining mines to place
 }
 
 export interface Bullet {
@@ -28,6 +36,7 @@ export interface Bullet {
   position: Vector2D;
   velocity: Vector2D;
   spawnTime: number;
+  isMega: boolean; // Is this a mega bullet?
 }
 
 export type GamePhase = 'WAITING' | 'PLAYING' | 'ENDED';
@@ -35,11 +44,16 @@ export type GamePhase = 'WAITING' | 'PLAYING' | 'ENDED';
 export interface GameState {
   players: Map<string, Player>;
   bullets: Bullet[];
+  powerUps: PowerUp[];
+  mines: Mine[];
   roundEndTime: number | null; // timestamp when round ends
   isRoundActive: boolean;
   phase: GamePhase; // Current game phase
   hostPlayerId: string | null; // First player who can start the game
 }
+
+// Import Mine and PowerUp from PowerUpTypes
+import type { Mine, PowerUp } from './PowerUpTypes.js';
 
 // ========================================
 // Socket Event Types
@@ -49,6 +63,8 @@ export enum InputAction {
   THRUST_START = "THRUST_START",
   THRUST_STOP = "THRUST_STOP",
   FIRE = "FIRE",
+  PLACE_MINE = "PLACE_MINE",
+  DASH = "DASH",
 }
 
 export interface InputEvent {
@@ -87,8 +103,14 @@ export interface SerializedGameState {
     score: number;
     ammo: number;
     isAlive: boolean;
+    activePowerUps: ActivePowerUpEffect[];
+    shieldHits?: number;
+    dashCharges?: number;
+    minesAvailable?: number;
   }>;
   bullets: Bullet[];
+  powerUps: PowerUp[];
+  mines: Mine[];
   roundEndTime: number | null;
   isRoundActive: boolean;
   phase: GamePhase;

@@ -18,12 +18,14 @@ import {
 } from '@astroparty/shared';
 import { PhysicsEngine } from './PhysicsEngine.js';
 import { InputHandler } from './InputHandler.js';
+import { PowerUpManager } from './PowerUpManager.js';
 
 export class GameManager {
   private io: SocketIOServer<ClientToServerEvents, ServerToClientEvents>;
   private gameState: GameState;
   private physicsEngine: PhysicsEngine;
   private inputHandler: InputHandler;
+  private powerUpManager: PowerUpManager;
   private gameLoopInterval: NodeJS.Timeout | null = null;
   private roundDuration: number;
   private playerNames: Map<string, string> = new Map();
@@ -35,6 +37,8 @@ export class GameManager {
     this.gameState = {
       players: new Map(),
       bullets: [],
+      powerUps: [],
+      mines: [],
       roundEndTime: null,
       isRoundActive: false,
       phase: 'WAITING',
@@ -42,7 +46,8 @@ export class GameManager {
     };
 
     this.physicsEngine = new PhysicsEngine(this.gameState);
-    this.inputHandler = new InputHandler(this.gameState);
+    this.inputHandler = new InputHandler(this.gameState, this);
+    this.powerUpManager = new PowerUpManager(this.gameState);
   }
 
   start(): void {
@@ -82,6 +87,7 @@ export class GameManager {
       isThrustActive: false,
       turnStartTime: Date.now(),
       lastReloadTime: Date.now(),
+      activePowerUps: [],
     };
 
     this.gameState.players.set(playerId, player);
@@ -107,6 +113,9 @@ export class GameManager {
     
     // Remove bullets from this player
     this.gameState.bullets = this.gameState.bullets.filter(b => b.playerId !== playerId);
+    
+    // Remove mines from this player
+    this.gameState.mines = this.gameState.mines.filter(m => m.playerId !== playerId);
 
     this.io.emit('playerLeft', playerId);
 
@@ -161,6 +170,9 @@ export class GameManager {
     // Update physics
     this.physicsEngine.update();
 
+    // Update power-ups
+    this.powerUpManager.update();
+
     // Handle ammo reload
     this.updateAmmo();
 
@@ -178,13 +190,17 @@ export class GameManager {
   private updateAmmo(): void {
     const now = Date.now();
     for (const player of this.gameState.players.values()) {
-      if (player.ammo < AMMO_CLIP_SIZE) {
+      const maxAmmo = this.powerUpManager.getMaxAmmo(player);
+      
+      if (player.ammo < maxAmmo) {
         // Check if we can reload another charge
         const timeSinceLastReload = now - player.lastReloadTime;
-        const reloadTime = 2000; // AMMO_RELOAD_TIME from constants
+        const baseReloadTime = 2000; // AMMO_RELOAD_TIME from constants
+        const reloadMultiplier = this.powerUpManager.getReloadMultiplier(player);
+        const reloadTime = baseReloadTime * reloadMultiplier;
         
         if (timeSinceLastReload >= reloadTime) {
-          player.ammo = Math.min(player.ammo + 1, AMMO_CLIP_SIZE);
+          player.ammo = Math.min(player.ammo + 1, maxAmmo);
           player.lastReloadTime = now;
         }
       }
@@ -204,9 +220,16 @@ export class GameManager {
       player.rotation = Math.random() * Math.PI * 2;
       player.ammo = AMMO_CLIP_SIZE;
       player.isThrustActive = false;
+      player.activePowerUps = [];
+      player.shieldHits = undefined;
+      player.dashCharges = undefined;
+      player.minesAvailable = undefined;
     }
 
     this.gameState.bullets = [];
+    
+    // Clear all power-ups and mines
+    this.powerUpManager.clearAllPowerUps();
 
     this.io.emit('roundStart', this.gameState.roundEndTime);
   }
@@ -252,8 +275,14 @@ export class GameManager {
         score: p.score,
         ammo: p.ammo,
         isAlive: p.isAlive,
+        activePowerUps: p.activePowerUps,
+        shieldHits: p.shieldHits,
+        dashCharges: p.dashCharges,
+        minesAvailable: p.minesAvailable,
       })),
       bullets: this.gameState.bullets,
+      powerUps: this.gameState.powerUps,
+      mines: this.gameState.mines,
       roundEndTime: this.gameState.roundEndTime,
       isRoundActive: this.gameState.isRoundActive,
       phase: this.gameState.phase,
@@ -261,5 +290,10 @@ export class GameManager {
     };
 
     this.io.emit('gameState', serialized);
+  }
+  
+  // Expose PowerUpManager methods for InputHandler
+  getPowerUpManager(): PowerUpManager {
+    return this.powerUpManager;
   }
 }

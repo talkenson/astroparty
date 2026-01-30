@@ -13,6 +13,9 @@ import {
   RESTITUTION,
   BULLET_LIFETIME,
   BULLET_RADIUS,
+  PowerUpType,
+  SPEED_BOOST_MULTIPLIER,
+  SPEED_BOOST_ACCELERATION_MULTIPLIER,
 } from '@astroparty/shared';
 
 export class PhysicsEngine {
@@ -34,15 +37,27 @@ export class PhysicsEngine {
       if (!player.isAlive) continue;
 
       if (player.isThrustActive) {
+        // Check for speed boost
+        const hasSpeedBoost = player.activePowerUps.some(
+          e => e.type === PowerUpType.SPEED_BOOST
+        );
+        
+        const acceleration = hasSpeedBoost 
+          ? ACCELERATION * SPEED_BOOST_ACCELERATION_MULTIPLIER 
+          : ACCELERATION;
+        const maxSpeed = hasSpeedBoost 
+          ? MAX_SPEED * SPEED_BOOST_MULTIPLIER 
+          : MAX_SPEED;
+
         // Apply acceleration in current direction
-        player.velocity.x += Math.cos(player.rotation) * ACCELERATION;
-        player.velocity.y += Math.sin(player.rotation) * ACCELERATION;
+        player.velocity.x += Math.cos(player.rotation) * acceleration;
+        player.velocity.y += Math.sin(player.rotation) * acceleration;
 
         // Clamp to max speed
         const speed = Math.sqrt(player.velocity.x ** 2 + player.velocity.y ** 2);
-        if (speed > MAX_SPEED) {
-          player.velocity.x = (player.velocity.x / speed) * MAX_SPEED;
-          player.velocity.y = (player.velocity.y / speed) * MAX_SPEED;
+        if (speed > maxSpeed) {
+          player.velocity.x = (player.velocity.x / speed) * maxSpeed;
+          player.velocity.y = (player.velocity.y / speed) * maxSpeed;
         }
       } else {
         // Rotate when not thrusting
@@ -95,6 +110,16 @@ export class PhysicsEngine {
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < SHIP_MAX_RADIUS + BULLET_RADIUS) {
+          // Check shield
+          if (player.shieldHits && player.shieldHits > 0) {
+            // Shield absorbs hit
+            player.shieldHits--;
+            
+            // Remove bullet
+            this.gameState.bullets.splice(i, 1);
+            break;
+          }
+          
           // Hit!
           player.isAlive = false;
           
@@ -137,6 +162,15 @@ export class PhysicsEngine {
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < COLLISION_DISTANCE) {
+          // Check for ghost mode on either player
+          const p1HasGhost = p1.activePowerUps.some(e => e.type === PowerUpType.GHOST_MODE);
+          const p2HasGhost = p2.activePowerUps.some(e => e.type === PowerUpType.GHOST_MODE);
+          
+          // Skip collision if either player has ghost mode
+          if (p1HasGhost || p2HasGhost) {
+            continue;
+          }
+          
           // Elastic collision
           this.resolveElasticCollision(p1, p2, dx, dy, distance);
         }
