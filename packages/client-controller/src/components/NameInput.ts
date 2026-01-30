@@ -16,12 +16,19 @@ export class NameInput {
     const input = document.getElementById('player-name-input') as HTMLInputElement;
     const button = document.getElementById('join-button') as HTMLButtonElement;
 
+    const recentName = window.localStorage.getItem('astro.playerName');
+    if (recentName) {
+      input.value = recentName;
+    }
+
     const joinGame = () => {
       const playerName = input.value.trim();
       if (playerName.length === 0) {
         alert('Please enter a name');
         return;
       }
+
+      window.localStorage.setItem('astro.playerName', playerName);
 
       button.disabled = true;
       button.textContent = 'Joining...';

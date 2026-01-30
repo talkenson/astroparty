@@ -96,7 +96,8 @@ export class MapManager {
     }
 
     const randomName = mapNames[Math. floor(Math.random() * mapNames.length)];
-    const map = this.maps.get(randomName)!;
+    console.log(mapNames)
+    const map = this.maps.get('arena')!;
     
     console.log(`[MapManager] Selected map: ${map.metadata.name}`);
     return map;
