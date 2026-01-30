@@ -16,6 +16,9 @@ import {
   PLAYER_COLORS,
   AMMO_CLIP_SIZE,
   SHIP_MAX_RADIUS,
+  BLOCK_SIZE,
+  GRID_WIDTH,
+  GRID_HEIGHT,
 } from '@astroparty/shared';
 import { PhysicsEngine } from './PhysicsEngine.js';
 import { InputHandler } from './InputHandler.js';
@@ -279,7 +282,7 @@ export class GameManager {
 
   private getRandomSpawnPosition(): { x: number; y: number } {
     // Try to find a valid spawn position that doesn't collide with walls
-    const maxAttempts = 100;
+    const maxAttempts = 30;
     
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const x = Math.random() * GAME_WIDTH;
@@ -291,12 +294,39 @@ export class GameManager {
       }
     }
     
-    // Fallback: return center if we couldn't find a spot
-    console.warn('[GameManager] Could not find clear spawn position, using center');
-    return {
-      x: GAME_WIDTH / 2,
-      y: GAME_HEIGHT / 2,
-    };
+    // Fallback: systematically search grid centers
+    // Center of block is safest: BLOCK_SIZE/2 + i * BLOCK_SIZE
+    console.warn('[GameManager] Random spawn failed, searching grid centers...');
+    
+    // Create a randomized order of grid indices to avoid always spawning top-left
+    const gridIndices: {x: number, y: number}[] = [];
+    // Skip outer edges (0 and MAX-1) to avoid map boundaries
+    for (let y = 1; y < GRID_HEIGHT - 1; y++) {
+      for (let x = 1; x < GRID_WIDTH - 1; x++) {
+        gridIndices.push({x, y});
+      }
+    }
+    
+    // Shuffle indices for variety even in fallback
+    for (let i = gridIndices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [gridIndices[i], gridIndices[j]] = [gridIndices[j], gridIndices[i]];
+    }
+
+    // Check each grid center
+    for (const pos of gridIndices) {
+      const centerX = pos.x * BLOCK_SIZE + BLOCK_SIZE / 2;
+      const centerY = pos.y * BLOCK_SIZE + BLOCK_SIZE / 2;
+
+      if (!this.physicsEngine.isPositionInsideWall(centerX, centerY, SHIP_MAX_RADIUS)) {
+        console.log(`[GameManager] Found spawn at grid center (${centerX}, ${centerY})`);
+        return { x: centerX, y: centerY };
+      }
+    }
+    
+    // Last resort: force spawn at top-left corner (should never happen with proper maps)
+    console.error('[GameManager] NO VALID SPAWN FOUND! Using emergency position');
+    return { x: 90, y: 90 };
   }
 
   private broadcastGameState(): void {
