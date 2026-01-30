@@ -31,7 +31,7 @@ COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package*.json ./packages/shared/
 COPY --from=builder /app/packages/server/dist ./packages/server/dist
 COPY --from=builder /app/packages/server/public ./packages/server/public
-COPY --from=builder /app/packages/server/maps ./packages/server/maps
+# Note: maps directory is mounted via volume (./maps:/app/packages/server/maps)
 COPY --from=builder /app/packages/server/package*.json ./packages/server/
 COPY --from=builder /app/packages/client-display/dist ./packages/client-display/dist
 COPY --from=builder /app/packages/client-controller/dist ./packages/client-controller/dist
