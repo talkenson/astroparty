@@ -256,6 +256,9 @@ export class GameManager {
     this.gameState.recentPickups = [];
 
     this.io.emit('roundStart', this.gameState.roundEndTime);
+    
+    // Sync map to all displays
+    this.io.to('displays').emit('mapSync', this.gameState.blocks);
   }
 
   private endRound(): void {
@@ -330,6 +333,7 @@ export class GameManager {
   }
 
   private broadcastGameState(): void {
+    // 1. Prepare full state for displays (WITHOUT blocks)
     const serialized: SerializedGameState = {
       players: Array.from(this.gameState.players.values()).map(p => ({
         id: p.id,
@@ -349,7 +353,7 @@ export class GameManager {
       bullets: this.gameState.bullets,
       powerUps: this.gameState.powerUps,
       mines: this.gameState.mines,
-      blocks: this.gameState.blocks,
+      // blocks: this.gameState.blocks, // Removed from 60fps update
       recentPickups: this.gameState.recentPickups,
       roundEndTime: this.gameState.roundEndTime,
       isRoundActive: this.gameState.isRoundActive,
@@ -357,9 +361,40 @@ export class GameManager {
       hostPlayerId: this.gameState.hostPlayerId,
     };
 
-    this.io.emit('gameState', serialized);
+    // Send full state to displays only
+    this.io.to('displays').emit('gameState', serialized);
+    
+    // 2. Send optimize state to controllers (individual updates)
+    for (const player of this.gameState.players.values()) {
+      // Send only what the controller needs
+        this.io.to(player.id).emit('playerState', {
+        id: player.id,
+        name: player.name,
+        color: player.color,
+        ammo: player.ammo,
+        isAlive: player.isAlive,
+        // ... (rest is same)
+        score: player.score,
+        activePowerUps: player.activePowerUps,
+        shieldHits: player.shieldHits,
+        dashCharges: player.dashCharges,
+        minesAvailable: player.minesAvailable,
+        phase: this.gameState.phase,
+        roundEndTime: this.gameState.roundEndTime,
+        hostPlayerId: this.gameState.hostPlayerId,
+      });
+    }
   }
-  
+
+  /**
+   * Sync map data to a specific client (used when new display connects)
+   */
+  public syncMapToClient(socketId: string): void {
+    if (this.gameState.blocks.length > 0) {
+      this.io.to(socketId).emit('mapSync', this.gameState.blocks);
+    }
+  }
+
   // Expose PowerUpManager methods for InputHandler
   getPowerUpManager(): PowerUpManager {
     return this.powerUpManager;

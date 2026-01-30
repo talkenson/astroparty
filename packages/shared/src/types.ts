@@ -108,6 +108,8 @@ export interface ClientToServerEvents {
 // Server -> Client events
 export interface ServerToClientEvents {
   gameState: (state: SerializedGameState) => void;
+  playerState: (state: PlayerSpecificState) => void; // Optimized update for controllers
+  mapSync: (blocks: Block[]) => void; // Static map data sent only on change
   playerJoined: (playerId: string, playerName: string) => void;
   playerLeft: (playerId: string) => void;
   roundStart: (endTime: number) => void;
@@ -134,10 +136,28 @@ export interface SerializedGameState {
   bullets: Bullet[];
   powerUps: PowerUp[];
   mines: Mine[];
-  blocks: Block[];
+  // blocks removed from 60fps update - sent via mapSync
+  blocks?: Block[];
   recentPickups: PowerUpPickup[];
   roundEndTime: number | null;
   isRoundActive: boolean;
   phase: GamePhase;
+  hostPlayerId: string | null;
+}
+
+// Optimized state for individual controllers
+export interface PlayerSpecificState {
+  id: string;
+  name: string;
+  color: string;
+  ammo: number;
+  isAlive: boolean;
+  score: number;
+  activePowerUps: ActivePowerUpEffect[];
+  shieldHits?: number;
+  dashCharges?: number;
+  minesAvailable?: number;
+  phase: GamePhase;
+  roundEndTime: number | null;
   hostPlayerId: string | null;
 }

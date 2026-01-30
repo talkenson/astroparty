@@ -74,7 +74,18 @@ const gameManager = new GameManager(io, ROUND_DURATION);
 
 // Socket.IO connection handler
 io.on('connection', (socket) => {
-  fastify.log.info(`Client connected: ${socket.id}`);
+  const clientType = socket.handshake.query.type as string;
+  fastify.log.info(`Client connected: ${socket.id} (Type: ${clientType || 'unknown'})`);
+
+  // Identify client role and join appropriate room
+  if (clientType === 'display') {
+    socket.join('displays');
+    // Send current map immediately to new display
+    gameManager.syncMapToClient(socket.id);
+  } else {
+    // Default to controller room for anyone else (or unknown)
+    socket.join('controllers');
+  }
 
   socket.on('joinGame', (playerName, callback) => {
     fastify.log.info(`Player joining: ${playerName} (${socket.id})`);

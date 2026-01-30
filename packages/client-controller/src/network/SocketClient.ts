@@ -9,6 +9,7 @@ export class SocketClient {
   constructor(serverUrl: string) {
     this.socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
+      query: { type: 'controller' },
     }) as TypedSocket;
   }
 

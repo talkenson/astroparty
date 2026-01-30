@@ -101,15 +101,13 @@ export class Controller {
   }
 
   private listenForGameState(): void {
-    this.socketClient.on('gameState', (state) => {
-      const player = state.players.find(p => p.id === this.playerId);
-      if (player) {
-        this.updateAmmoDisplay(player.ammo);
-        this.updatePlayerColor(player.color);
-        this.updatePowerUpIndicators(player);
-      }
+    // Listen for optimized player updates
+    this.socketClient.on('playerState', (state) => {
+      // Direct update from specific state
+      this.updateAmmoDisplay(state.ammo);
+      this.updatePlayerColor(state.color);
+      this.updatePowerUpIndicators(state);
       
-      // Update game phase UI
       this.updateGamePhase(state.phase, state.hostPlayerId);
     });
   }
@@ -119,7 +117,8 @@ export class Controller {
     const startButton = document.getElementById('start-game-button')!;
     const playAgainButton = document.getElementById('play-again-button')!;
 
-    console.log(`[Controller] Phase: ${phase}, Host: ${hostPlayerId}, Me: ${this.playerId}`);
+    // Removed verbose logging
+    // console.log(`[Controller] Phase: ${phase}, Host: ${hostPlayerId}, Me: ${this.playerId}`);
 
     if (phase === 'WAITING') {
       // Show start button only to host
@@ -127,12 +126,11 @@ export class Controller {
         controls.style.display = 'none';
         startButton.style.display = 'flex';
         playAgainButton.style.display = 'none';
-        console.log('[Controller] Showing START button (I am host)');
       } else {
         controls.style.display = 'none';
         startButton.style.display = 'none';
         playAgainButton.style.display = 'none';
-        console.log('[Controller] Waiting for host to start...');
+        // console.log('[Controller] Waiting for host to start...');
       }
     } else if (phase === 'PLAYING') {
       // Show game controls
