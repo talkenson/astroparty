@@ -9,5 +9,16 @@ services:
       - PORT=3000
       - ROUND_DURATION=150000
       - NODE_ENV=production
+    volumes:
+      - ./maps:/app/packages/server/maps
     restart: unless-stopped
     container_name: astroparty-game
+
+  map-editor:
+    build:
+      context: .
+      dockerfile: Dockerfile.map-editor
+    ports:
+      - "3002:80"
+    restart: unless-stopped
+    container_name: astroparty-map-editor

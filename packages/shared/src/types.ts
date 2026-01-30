@@ -14,12 +14,19 @@ export interface Vector2D {
 // ========================================
 
 export interface Block {
-  gridX: number; // X position in grid (0-31)
-  gridY: number; // Y position in grid (0-17)
+  gridX: number; // X position in grid
+  gridY: number; // Y position in grid
+}
+
+export interface MapMetadata {
+  name: string;
+  author: string;
+  width: number;  // Grid width in blocks
+  height: number; // Grid height in blocks
 }
 
 export interface MapData {
-  name: string;
+  metadata: MapMetadata;
   blocks: Block[];
 }
 

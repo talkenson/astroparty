@@ -9,13 +9,6 @@ const __dirname = path.dirname(__filename);
 
 export class MapManager {
   private maps: Map<string, MapData> = new Map();
-  private availableMapNames: string[] = [
-    'empty_arena',
-    'pillars',
-    'four_corners',
-    'crossroads',
-    'bunkers',
-  ];
 
   constructor() {
     this.loadAllMaps();
@@ -24,37 +17,74 @@ export class MapManager {
   private loadAllMaps(): void {
     const mapsDir = path.join(__dirname, '../../maps');
 
-    for (const mapName of this.availableMapNames) {
-      const mapPath = path.join(mapsDir, `${mapName}.txt`);
+    // Scan directory for all .map.txt files
+    const files = fs.readdirSync(mapsDir);
+    const mapFiles = files.filter(file => file.endsWith('.map.txt'));
+
+    console.log(`[MapManager] Found ${mapFiles.length} map files in ${mapsDir}`);
+
+    for (const filename of mapFiles) {
+      const mapPath = path.join(mapsDir, filename);
+      const mapName = filename.replace('.map.txt', '');
       
       try {
         const mapData = this.loadMapFromFile(mapPath, mapName);
         this.maps.set(mapName, mapData);
-        console.log(`[MapManager] Loaded map: ${mapName} (${mapData.blocks.length} blocks)`);
+        console.log(`[MapManager] Loaded map: ${mapData.metadata.name} by ${mapData.metadata.author} (${mapData.blocks.length} blocks, ${mapData.metadata.width}x${mapData.metadata.height})`);
       } catch (error) {
         console.error(`[MapManager] Failed to load map ${mapName}:`, error);
       }
     }
   }
 
-  private loadMapFromFile(filePath: string, name: string): MapData {
+  private loadMapFromFile(filePath: string, fallbackName: string): MapData {
     const content = fs.readFileSync(filePath, 'utf-8');
-    const lines = content.split('\n').map(line => line.replace('\r', ''));
+    const lines = content.split('\n').map(line => line.replace('\r', '').trim()).filter(l => l.length > 0);
     
+    let metadata: { name: string; author: string; width: number; height: number };
+    let gridStartIndex = 0;
+    
+    // Check for new format (header line starting with #)
+    if (lines.length > 0 && lines[0].startsWith('-')) {
+      const header = lines[0].substring(1).trim(); // Remove leading '#'
+      const parts = header.split('|').map(p => p.trim());
+      
+      const name = parts[0] || fallbackName;
+      const author = parts[1] || 'Unknown';
+      const gridSizeStr = parts[2] || `${GRID_WIDTH}x${GRID_HEIGHT}`;
+      const [widthStr, heightStr] = gridSizeStr.split('x');
+      const width = parseInt(widthStr) || GRID_WIDTH;
+      const height = parseInt(heightStr) || GRID_HEIGHT;
+      
+      metadata = { name, author, width, height };
+      gridStartIndex = 1; // Skip header line
+    } else {
+      // Old format - no header, use defaults
+      metadata = {
+        name: fallbackName,
+        author: 'Unknown',
+        width: GRID_WIDTH,
+        height: GRID_HEIGHT,
+      };
+      gridStartIndex = 0;
+    }
+    
+    // Parse grid data
     const blocks: Block[] = [];
-
-    // Parse ASCII map
-    for (let y = 0; y < lines.length && y < GRID_HEIGHT; y++) {
+    for (let y = gridStartIndex; y < lines.length && (y - gridStartIndex) < metadata.height; y++) {
       const line = lines[y];
-      for (let x = 0; x < line.length && x < GRID_WIDTH; x++) {
+      for (let x = 0; x < Math.min(line.length, metadata.width); x++) {
         if (line[x] === '#') {
-          blocks.push({ gridX: x, gridY: y });
+          blocks.push({
+            gridX: x,
+            gridY: y - gridStartIndex,
+          });
         }
       }
     }
 
     return {
-      name,
+      metadata,
       blocks,
     };
   }
@@ -65,10 +95,10 @@ export class MapManager {
       throw new Error('[MapManager] No maps loaded!');
     }
 
-    const randomName = mapNames[Math.floor(Math.random() * mapNames.length)];
+    const randomName = mapNames[Math. floor(Math.random() * mapNames.length)];
     const map = this.maps.get(randomName)!;
     
-    console.log(`[MapManager] Selected map: ${randomName}`);
+    console.log(`[MapManager] Selected map: ${map.metadata.name}`);
     return map;
   }
 

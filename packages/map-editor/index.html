@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AstroParty Map Editor</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a15;
+      color: #fff;
+      display: flex;
+      height: 100vh;
+    }
+    
+    #sidebar {
+      width: 300px;
+      background: #1a1a2e;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    #editor-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    #canvas {
+      border: 2px solid #2a2a3e;
+      cursor: crosshair;
+      background: #0a0a15;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      margin: 5px 0;
+      background: #6c5ce7;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      width: 100%;
+      font-size: 14px;
+    }
+    
+    .btn:hover { background: #5f4fd1; }
+    .btn.danger { background: #e74c3c; }
+    .btn.danger:hover { background: #c0392b; }
+    
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      background: #2a2a3e;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    h1 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: #6c5ce7;
+    }
+    
+    h2 {
+      margin: 20px 0 10px;
+      font-size: 16px;
+      color: #aaa;
+    }
+    
+    .tool-btn {
+      padding: 8px 12px;
+      margin: 2px;
+      background: #2a2a3e;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .tool-btn.active {
+      background: #6c5ce7;
+    }
+    
+    .tool-btn:hover {
+      background: #3a3a4e;
+    }
+    
+    .tool-btn.active:hover {
+      background: #5f4fd1;
+    }
+    
+    .stats {
+      font-size: 12px;
+      color: #aaa;
+      margin: 10px 0;
+      line-height: 1.8;
+    }
+    
+    .info {
+      margin-top: 10px;
+      padding: 10px;
+      background: #2a2a3e;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #888;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h1>🎨 Map Editor</h1>
+    
+    <h2>Tools</h2>
+    <div>
+      <button class="tool-btn active" id="tool-wall">🧱 Wall</button>
+      <button class="tool-btn" id="tool-erase">🗑️ Erase</button>
+    </div>
+    
+    <h2>Map Info</h2>
+    <input type="text" id="map-name" placeholder="Map Name" value="Custom Map">
+    <input type="text" id="map-author" placeholder="Author Name (optional)" value="">
+    
+    <h2>Grid Size</h2>
+    <div style="display: flex; gap: 5px; align-items: center;">
+      <input type="number" id="grid-width" placeholder="Width" value="48" min="10" max="100" style="width: 45%;">
+      <span style="color: #888;">×</span>
+      <input type="number" id="grid-height" placeholder="Height" value="27" min="10" max="60" style="width: 45%;">
+    </div>
+    <button class="btn" id="btn-resize">🔄 Resize Grid</button>
+    
+    <div class="stats">
+      Grid: <span id="grid-size">48 x 27</span><br>
+      Blocks: <span id="block-count">0</span><br>
+      Coverage: <span id="coverage">0%</span>
+    </div>
+    
+    <h2>Actions</h2>
+    <button class="btn danger" id="btn-clear">🗑️ Clear Map</button>
+    <button class="btn" id="btn-fill">⬛ Fill All</button>
+    <button class="btn" id="btn-frame">🖼️ Add Border</button>
+    
+    <h2>File</h2>
+    <button class="btn" id="btn-export">💾 Export .map.txt</button>
+    <input type="file" id="file-input" accept=".map.txt,.txt" style="display: none;">
+    <button class="btn" id="btn-import">📂 Import Map</button>
+    
+    <h2>Preview</h2>
+    <textarea id="preview" rows="8" readonly style="font-family: monospace; font-size: 9px;"></textarea>
+    
+    <div class="info">
+      <strong>Controls:</strong><br>
+      • Left click: Draw walls<br>
+      • Right click: Erase<br>
+      • Drag to draw multiple<br>
+      <br>
+      Export creates a .txt file compatible with AstroParty server maps.
+    </div>
+  </div>
+  
+  <div id="editor-container">
+    <canvas id="canvas"></canvas>
+    <p style="margin-top: 10px; color: #888; font-size: 14px;">
+      Left Click: Draw • Right Click: Erase • Drag: Paint
+    </p>
+  </div>
+  
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

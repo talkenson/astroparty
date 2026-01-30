@@ -138,13 +138,13 @@ export class CanvasRenderer {
     const y = block.gridY * BLOCK_SIZE;
     
     // Draw solid block
-    this.ctx.fillStyle = '#2a2a3e';
-    this.ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+    this.ctx.fillStyle = '#2a2a3e44';
+    this.ctx.fillRect(x+ 1, y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
     
     // Draw border
-    this.ctx.strokeStyle = '#1a1a2e';
+    this.ctx.strokeStyle = '#1a1a2eaa';
     this.ctx.lineWidth = 2;
-    this.ctx.strokeRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+    this.ctx.strokeRect(x + 1, y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
   }
 
   private drawShip(player: any): void {
