@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  game:
+    image: git.talkiiing.ru/talkenson/astroparty:latest
+    environment:
+      - PORT=3000
+      - ROUND_DURATION=150000
+      - NODE_ENV=production
+    volumes:
+      - /home/docker_data/astroparty/maps:/app/packages/server/maps
+    networks:
+      - proxy-net
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == homer
+      restart_policy:
+        condition: any
+
+  map-editor:
+    image: git.talkiiing.ru/talkenson/astroparty-map-editor:latest
+    networks:
+      - proxy-net
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == homer
+      restart_policy:
+        condition: any
+
+networks:
+  proxy-net:
+    external: true

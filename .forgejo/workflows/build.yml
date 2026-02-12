@@ -1,0 +1,32 @@
+name: Build and Deploy Astroparty
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: docker
+    container:
+      image: catthehacker/ubuntu:act-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Registry
+        run: echo "${{ secrets.FORGEJO_TOKEN }}" | docker login git.talkiiing.ru -u talkenson --password-stdin
+
+      - name: Build and Push Images
+        run: |
+          docker build -t git.talkiiing.ru/talk/astroparty:latest .
+          docker push git.talkiiing.ru/talk/astroparty:latest
+          
+          docker build -f Dockerfile.map-editor -t git.talkiiing.ru/talk/astroparty:editor-latest .
+          docker push git.talkiiing.ru/talk/astroparty:editor-latest
+          
+      - name: Trigger Deployment via Webhooks
+        run: |
+          curl -X POST "${{ secrets.PORTAINER_WEBHOOK_GAME }}"
+          curl -X POST "${{ secrets.PORTAINER_WEBHOOK_EDITOR }}"
